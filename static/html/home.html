@@ -57,6 +57,9 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
     let socket;
+    let o = document.getElementById("output");
+    let userField = document.getElementById("username");
+    let messageField = document.getElementById("message");
 
     window.onbeforeunload = function () {
         let jsonData = {};
@@ -92,6 +95,10 @@
                                 })
                             }
                             break;
+
+                        case "broadcast":
+                            o.innerHTML = o.innerHTML + data.message + "<br>";
+                            break;
                     }
                 }
 
@@ -113,14 +120,34 @@
 
         document.getElementById("message").addEventListener("keydown", function (e) {
             if (e.code === "Enter") {
+                if ((userField.value === "") || (messageField.value === "")) {
+                    alert("Please enter a username and message");
+                    return false;
+                }
+
                 if (!socket) {
                     console.error("Socket connection is not available");
                     return false;
                 }
+
                 e.preventDefault();
                 e.stopPropagation();
                 sendMessage();
             }
+        });
+
+        document.getElementById("sendBtn").addEventListener("click", function () {
+            if ((userField.value === "") || (messageField.value === "")) {
+                alert("Please enter a username and message");
+                return false;
+            }
+
+            if (!socket) {
+                console.error("Socket connection is not available");
+                return false;
+            }
+
+            sendMessage();
         });
     });
 
