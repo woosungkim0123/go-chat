@@ -1,6 +1,10 @@
 {
-    "ServerInfo" : {
-        "Host": "127.0.0.1",
-        "Port": "8080"
+    "serverInfo" : {
+        "host": "127.0.0.1",
+        "port": "8080"
+    },
+    "sessionInfo" : {
+        "encryptionKey": "test",
+        "maxAge": 3600
     }
 }

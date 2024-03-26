@@ -7,7 +7,9 @@ import (
 
 func Routes() http.Handler {
 	mux := pat.New()
-	mux.Get("/", http.HandlerFunc(Home))
+	mux.Get("/", http.HandlerFunc(Login))
+	mux.Post("/login", http.HandlerFunc(DoLogin))
+
 	mux.Get("/ws", http.HandlerFunc(WsEndPoint))
 	return mux
 }

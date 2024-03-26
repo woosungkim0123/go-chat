@@ -6,9 +6,6 @@ import (
 	"log"
 	"net/http"
 	"sort"
-	"ws/internal/dto"
-	"ws/internal/service/userService"
-	"ws/internal/util/template"
 )
 
 var wsChan = make(chan WsPayload)
@@ -31,20 +28,6 @@ var upgradeConnection = websocket.Upgrader{
 type Item struct {
 	Name  string
 	Price float64
-}
-
-type HomeData struct {
-	Title string
-	Users []dto.UserDto
-}
-
-func Home(w http.ResponseWriter, r *http.Request) {
-	users := userService.GetUserList()
-
-	template.RenderWithHeader(w, "home", HomeData{
-		Title: "Home",
-		Users: users,
-	})
 }
 
 type WebSocketConnection struct {
