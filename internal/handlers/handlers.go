@@ -2,22 +2,18 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/CloudyKit/jet/v6"
 	"github.com/gorilla/websocket"
-	"html/template"
 	"log"
 	"net/http"
 	"sort"
+	"ws/internal/dto"
+	"ws/internal/service/userService"
+	"ws/internal/util/template"
 )
 
 var wsChan = make(chan WsPayload)
 
 var clients = make(map[WebSocketConnection]string)
-
-var views = jet.NewSet(
-	jet.NewOSFileSystemLoader("./static/html"),
-	jet.InDevelopmentMode(), // 개발 모드 활성화, 배포시에는? jet.InProductionMode()
-)
 
 var upgradeConnection = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -32,13 +28,23 @@ var upgradeConnection = websocket.Upgrader{
 	},
 }
 
-func Home(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("./static/html/home.html"))
-	err := tmpl.Execute(w, nil)
-	if err != nil {
-		log.Println(err)
-	}
+type Item struct {
+	Name  string
+	Price float64
+}
 
+type HomeData struct {
+	Title string
+	Users []dto.UserDto
+}
+
+func Home(w http.ResponseWriter, r *http.Request) {
+	users := userService.GetUserList()
+
+	template.RenderWithHeader(w, "home", HomeData{
+		Title: "Home",
+		Users: users,
+	})
 }
 
 type WebSocketConnection struct {
@@ -163,20 +169,4 @@ func broadcastToAll(response WsJsonResponse) {
 			delete(clients, client)
 		}
 	}
-}
-
-func renderPage(w http.ResponseWriter, tmpl string, data jet.VarMap) error {
-	view, err := views.GetTemplate(tmpl)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	err = view.Execute(w, data, nil)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	return nil
 }
