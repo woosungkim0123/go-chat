@@ -9,9 +9,14 @@ import (
 func Routes() http.Handler {
 	mux := pat.New()
 	mux.Get("/", middleware.AuthMiddleware(http.HandlerFunc(Home)))
-	mux.Get("/login", http.HandlerFunc(Login))
-	mux.Post("/login", http.HandlerFunc(DoLogin))
+
+	authRouter("/login", mux)
 
 	mux.Get("/ws", http.HandlerFunc(WsEndPoint))
 	return mux
+}
+
+func authRouter(routerUrl string, mux *pat.PatternServeMux) {
+	mux.Get(routerUrl, http.HandlerFunc(Login))
+	mux.Post(routerUrl, http.HandlerFunc(DoLogin))
 }

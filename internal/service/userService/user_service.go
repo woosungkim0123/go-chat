@@ -24,6 +24,29 @@ func DoLogin(userId string) (*dto.UserDto, *apperrors.CustomError) {
 	return &userDto, nil
 }
 
+// 자신 프로필, 채팅할 수 있는 사람 리스트 반환
+func GetChatList(id int) []dto.UserDto {
+	users := getUserList()
+	var userDtos []dto.UserDto
+	for _, user := range users {
+		if user.Id != id {
+			userDto := dto.UserDto{Id: user.Id, Name: user.Name}
+			userDtos = append(userDtos, userDto)
+		}
+	}
+	return userDtos
+}
+
+func GetMyProfile(id int) *dto.UserDto {
+	users := getUserList()
+	for _, user := range users {
+		if user.Id == id {
+			return &dto.UserDto{Id: user.Id, Name: user.Name}
+		}
+	}
+	return nil
+}
+
 func findByUserId(userId string) (*domain.User, error) {
 	users := getUserList()
 	for _, u := range users {
