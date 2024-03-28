@@ -43,3 +43,17 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+func DoLogout(w http.ResponseWriter, r *http.Request) {
+	session, _ := config.Store.Get(r, "ws-session")
+
+	session.Options.MaxAge = -1
+
+	// 세션 변경사항을 저장합니다.
+	if err := session.Save(r, w); err != nil {
+		http.Error(w, "Failed to save session", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}

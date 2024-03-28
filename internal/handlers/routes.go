@@ -19,4 +19,5 @@ func Routes() http.Handler {
 func authRouter(routerUrl string, mux *pat.PatternServeMux) {
 	mux.Get(routerUrl, http.HandlerFunc(Login))
 	mux.Post(routerUrl, http.HandlerFunc(DoLogin))
+	mux.Get("/logout", http.HandlerFunc(DoLogout))
 }
