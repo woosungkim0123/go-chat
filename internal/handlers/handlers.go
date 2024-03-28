@@ -17,10 +17,10 @@ var upgradeConnection = websocket.Upgrader{
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
+		// 전부다 허용
 		if origin == "http://localhost:8080" {
 			return true
 		}
-		// 일단 전부다 허용
 		return true
 	},
 }
