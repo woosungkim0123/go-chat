@@ -64,3 +64,13 @@ func getUserList() []domain.User {
 
 	return users
 }
+
+func FindUser(userId int) *domain.User {
+	users := getUserList()
+	for _, user := range users {
+		if user.Id == userId {
+			return &user
+		}
+	}
+	return nil
+}
