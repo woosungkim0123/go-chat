@@ -25,3 +25,22 @@ func ReadAndConvert(filePath string, target interface{}) {
 		return
 	}
 }
+
+func Write(filePath string, target interface{}) {
+	// 파일 열기
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Println("Create file error: ", err)
+		return
+	}
+
+	defer file.Close()
+
+	// target 구조체를 JSON 파일로 인코딩
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(target)
+	if err != nil {
+		fmt.Printf("encode error: %v\n", err)
+		return
+	}
+}
