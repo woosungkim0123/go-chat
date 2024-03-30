@@ -16,3 +16,13 @@ func AddChatroom(chatroom domain.Chatroom) {
 	chatroomList = append(chatroomList, chatroom)
 	jsonReader.Write("internal/store/json/chatroom.json", chatroomList)
 }
+
+func FindChatroom(roomId int) *domain.Chatroom {
+	allChatroomList := GetAllChatroom()
+	for _, chatroom := range allChatroomList {
+		if chatroom.RoomID == roomId {
+			return &chatroom
+		}
+	}
+	return nil
+}

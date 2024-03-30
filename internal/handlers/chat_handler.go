@@ -2,15 +2,10 @@ package handlers
 
 import (
 	"net/http"
-	"ws/internal/dto"
 	"ws/internal/service/chatService"
 	"ws/internal/util/converter"
 	"ws/internal/util/template"
 )
-
-type ChatRoomData struct {
-	ChatroomDto *dto.ChatroomDto
-}
 
 func Chat(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value("uid")
@@ -21,5 +16,5 @@ func Chat(w http.ResponseWriter, r *http.Request) {
 
 	chatroomDto := chatService.GetChatroomByUserId(accessUserId, otherUserId)
 
-	template.RenderWithHeader(w, "chatroom", ChatRoomData{chatroomDto})
+	template.RenderWithHeader(w, "chatroom", &chatroomDto)
 }

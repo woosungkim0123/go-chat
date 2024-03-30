@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"ws/internal/dto"
 	"ws/internal/service/userService"
@@ -15,7 +14,7 @@ type HomeData struct {
 
 func Home(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value("uid").(int)
-	log.Printf("uid: %v", uid)
+
 	myProfile := userService.GetMyProfile(uid)
 	chatUserList := userService.GetChatList(uid)
 

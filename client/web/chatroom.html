@@ -22,18 +22,25 @@
         <div class="col-md-8">
             <h3 class="mb-3">채팅</h3>
             <ul id="chatList" class="list-group mb-3 border" style="height: 400px; overflow-y: auto;">
+                {{range .Messages}}
+                {{if eq .User.Id $.AccessUser.Id}}
                 <li class="list-group-item">
                     <div class="d-flex w-100 justify-content-start flex-column">
-                        <small class="text-muted">나</small>
-                        <div class="mb-1">안녕하세요</div>
+                        <small class="text-muted">{{.Time}}</small>
+                        <small class="text-muted">{{.User.Name}}</small>
+                        <div class="mb-1">{{.Message}}</div>
                     </div>
                 </li>
+                {{else}}
                 <li class="list-group-item">
                     <div class="d-flex w-100 justify-content-end flex-column align-items-end">
-                        <small class="text-muted">상대방</small>
-                        <div class="mb-1">안녕하세요</div>
+                        <small class="text-muted">{{.Time}}</small>
+                        <small class="text-muted">{{.User.Name}}</small>
+                        <div class="mb-1">{{.Message}}</div>
                     </div>
                 </li>
+                {{end}}
+                {{end}}
             </ul>
             <!-- 채팅 입력 -->
             <form id="chatForm" action="/send" method="POST">
@@ -49,12 +56,12 @@
             <h3 class="mb-3">참여자</h3>
             <ul class="list-group">
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{.ChatroomDto.AccessUser.Name}} (본인)
+                    {{.AccessUser.Name}} (본인)
                     <span class="badge bg-primary rounded-pill">*</span>
                 </li>
 
-                {{range .ChatroomDto.Participants}}
-                {{if ne .Id $.ChatroomDto.AccessUser.Id}}
+                {{range .Participants}}
+                {{if ne .Id $.AccessUser.Id}}
                 <li class="list-group-item">{{.Name}}</li>
                 {{end}}
                 {{end}}
@@ -65,6 +72,11 @@
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
+    const scrollToBottom = () => {
+        const chatList = document.getElementById("chatList");
+        chatList.scrollTop = chatList.scrollHeight;
+    }
+
     let socket;
 
     let o = document.getElementById("output");
@@ -78,6 +90,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        scrollToBottom();
         socket = new WebSocket("ws://127.0.0.1:8080/ws");
 
         socket.onopen = () => {
@@ -85,32 +98,28 @@
         };
 
         socket.onmessage = msg => {
-                    // console.log(msg);
-                    // let j = JSON.parse(msg.data);
-                    // console.log(j);
+            let data = JSON.parse(msg.data);
+            console.log("Action is", data.action);
 
-                    let data = JSON.parse(msg.data);
-                    console.log("Action is", data.action);
+            switch (data.action) {
+                case "list_users":
+                    let ul = document.getElementById("online_users");
+                    while (ul.firstChild) ul.removeChild(ul.firstChild);
 
-                    switch (data.action) {
-                        case "list_users":
-                            let ul = document.getElementById("online_users");
-                            while (ul.firstChild) ul.removeChild(ul.firstChild);
-
-                            if (data.connected_users.length > 0) {
-                                data.connected_users.forEach(function (item) {
-                                    let li = document.createElement("li");
-                                    li.appendChild(document.createTextNode(item));
-                                    ul.appendChild(li);
-                                })
-                            }
-                            break;
-
-                        case "broadcast":
-                            o.innerHTML = o.innerHTML + data.message + "<br>";
-                            break;
+                    if (data.connected_users.length > 0) {
+                        data.connected_users.forEach(function (item) {
+                            let li = document.createElement("li");
+                            li.appendChild(document.createTextNode(item));
+                            ul.appendChild(li);
+                        })
                     }
-                }
+                    break;
+
+                case "broadcast":
+                    o.innerHTML = o.innerHTML + data.message + "<br>";
+                    break;
+            }
+        }
 
         socket.onclose = () => {
             console.log('Connection to the server closed');

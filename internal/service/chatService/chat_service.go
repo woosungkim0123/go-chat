@@ -51,23 +51,32 @@ func createChatRoom(accessUserId, otherUserId int) *domain.Chatroom {
 			*accessUser,
 			*otherUser,
 		},
+		Messages: []domain.ChatroomMessage{},
 	}
 	chatRepository.AddChatroom(room)
 
 	return &room
 }
 
-func convertChatroomDto(room *domain.Chatroom, accessUerId int) *dto.ChatroomDto {
+func convertChatroomDto(room *domain.Chatroom, accessUserId int) *dto.ChatroomDto {
 	var userDtos []dto.UserDto
 	var accessUserDto dto.UserDto
-	var otherUserDto dto.UserDto
+
 	for _, user := range room.Participants {
-		if user.Id == accessUerId {
+		if user.Id == accessUserId {
 			accessUserDto = dto.UserDto{Id: user.Id, Name: user.Name}
-		} else {
-			otherUserDto = dto.UserDto{Id: user.Id, Name: user.Name}
 		}
 		userDtos = append(userDtos, dto.UserDto{Id: user.Id, Name: user.Name})
+	}
+
+	var chatMessageListDto []dto.ChatMessageDto
+
+	for _, m := range room.Messages {
+		chatMessageListDto = append(chatMessageListDto, dto.ChatMessageDto{
+			Message: m.Message,
+			User:    dto.UserDto{Id: m.User.Id, Name: m.User.Name},
+			Time:    m.Time.Format("1/02 15:04:05"),
+		})
 	}
 
 	return &dto.ChatroomDto{
@@ -75,6 +84,6 @@ func convertChatroomDto(room *domain.Chatroom, accessUerId int) *dto.ChatroomDto
 		RoomType:     room.RoomType,
 		Participants: userDtos,
 		AccessUser:   accessUserDto,
-		OtherUser:    otherUserDto,
+		Messages:     chatMessageListDto,
 	}
 }

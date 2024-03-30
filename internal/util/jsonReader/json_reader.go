@@ -2,7 +2,6 @@ package jsonReader
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 )
@@ -12,17 +11,13 @@ func ReadAndConvert(filePath string, target interface{}) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Println("Open file error: ", err)
-		return
+		panic(err)
 	}
-
 	defer file.Close()
 
-	// JSON 파일에서 target 구조체로 디코딩
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&target)
-	if err != nil {
-		fmt.Printf("decode error: %v\n", err)
-		return
+	if err = json.NewDecoder(file).Decode(&target); err != nil {
+		log.Printf("Error decoding JSON: %v", err)
+		panic(err)
 	}
 }
 
@@ -31,16 +26,13 @@ func Write(filePath string, target interface{}) {
 	file, err := os.Create(filePath)
 	if err != nil {
 		log.Println("Create file error: ", err)
-		return
+		panic(err)
 	}
 
 	defer file.Close()
 
-	// target 구조체를 JSON 파일로 인코딩
-	encoder := json.NewEncoder(file)
-	err = encoder.Encode(target)
-	if err != nil {
-		fmt.Printf("encode error: %v\n", err)
-		return
+	if err = json.NewEncoder(file).Encode(&target); err != nil {
+		log.Printf("Error encoding JSON: %v", err)
+		panic(err)
 	}
 }
