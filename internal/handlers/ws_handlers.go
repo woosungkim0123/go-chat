@@ -25,11 +25,6 @@ var upgradeConnection = websocket.Upgrader{
 	},
 }
 
-type Item struct {
-	Name  string
-	Price float64
-}
-
 type WebSocketConnection struct {
 	*websocket.Conn
 }
@@ -50,30 +45,23 @@ type WsPayload struct {
 	Conn     WebSocketConnection `json:"-"`
 }
 
-// 2. 사용자가 들어와서 웹소켓을 연결하게됨
+// 사용자가 들어와서 웹소켓을 연결하게됨
 func WsEndPoint(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgradeConnection.Upgrade(w, r, nil)
+	// TODO 에러 발생시 로그 찍고, 연결 실패 응답 보내기
 	if err != nil {
-		log.Println(err)
+		log.Println("wesocket upgrade failed", err)
+		return
 	}
 
-	log.Println("Client Connected to Endpoint")
-
-	var response WsJsonResponse
-	response.Message = `<em><small>Connected to server</small></em>`
+	log.Printf("Client Connected to Endpoint")
 
 	conn := WebSocketConnection{Conn: ws}
-	clients[conn] = ""
-
-	err = ws.WriteJSON(response)
-	if err != nil {
-		log.Println(err)
-	}
 
 	go ListenForWs(&conn) // 고루틴으로 듣기 시작
 }
 
-// 3. 요청을 보낼때 웹소켓을 통해 메시지를 보내게됨
+// 요청을 보낼때 웹소켓을 통해 메시지를 보내게됨
 func ListenForWs(conn *WebSocketConnection) {
 	log.Println("Listening to websocket~~")
 	defer func() {

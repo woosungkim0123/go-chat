@@ -99,6 +99,7 @@
 
         socket.onmessage = msg => {
             let data = JSON.parse(msg.data);
+            console.log(data)
             console.log("Action is", data.action);
 
             switch (data.action) {
@@ -129,45 +130,45 @@
             console.error('Error:', error);
         };
 
-        let userInput = document.getElementById("username");
-                userInput.addEventListener("change", function () {
-                    let jsonData = {};
-                    jsonData["action"] = "username";
-                    jsonData["username"] = this.value;
-                    socket.send(JSON.stringify(jsonData));
-        })
+        // let userInput = document.getElementById("username");
+        //         userInput.addEventListener("change", function () {
+        //             let jsonData = {};
+        //             jsonData["action"] = "username";
+        //             jsonData["username"] = this.value;
+        //             socket.send(JSON.stringify(jsonData));
+        // })
 
-        document.getElementById("message").addEventListener("keydown", function (e) {
-            if (e.code === "Enter") {
-                if ((userField.value === "") || (messageField.value === "")) {
-                    alert("Please enter a username and message");
-                    return false;
-                }
-
-                if (!socket) {
-                    console.error("Socket connection is not available");
-                    return false;
-                }
-
-                e.preventDefault();
-                e.stopPropagation();
-                sendMessage();
-            }
-        });
-
-        document.getElementById("sendBtn").addEventListener("click", function () {
-            if ((userField.value === "") || (messageField.value === "")) {
-                alert("Please enter a username and message");
-                return false;
-            }
-
-            if (!socket) {
-                console.error("Socket connection is not available");
-                return false;
-            }
-
-            sendMessage();
-        });
+        // document.getElementById("message").addEventListener("keydown", function (e) {
+        //     if (e.code === "Enter") {
+        //         if ((userField.value === "") || (messageField.value === "")) {
+        //             alert("Please enter a username and message");
+        //             return false;
+        //         }
+        //
+        //         if (!socket) {
+        //             console.error("Socket connection is not available");
+        //             return false;
+        //         }
+        //
+        //         e.preventDefault();
+        //         e.stopPropagation();
+        //         sendMessage();
+        //     }
+        // });
+        //
+        // document.getElementById("sendBtn").addEventListener("click", function () {
+        //     if ((userField.value === "") || (messageField.value === "")) {
+        //         alert("Please enter a username and message");
+        //         return false;
+        //     }
+        //
+        //     if (!socket) {
+        //         console.error("Socket connection is not available");
+        //         return false;
+        //     }
+        //
+        //     sendMessage();
+        // });
     });
 
     const sendMessage = () => {
