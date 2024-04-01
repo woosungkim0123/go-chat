@@ -74,17 +74,61 @@
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
+    let socket;
+    const roomId = document.getElementById("roomId").value;
+    let userId = document.getElementById("userId").value;
+
+    const messageInput = document.getElementById("messageInput");
+
+    const makeMessageDom = (data) => {
+        let ul = document.getElementById("chatList");
+        let li = document.createElement("li");
+        li.classList.add("list-group-item");
+
+        let div = document.createElement("div");
+        div.classList.add("d-flex", "w-100", "flex-column", "mb-1");
+        console.log(data.user.id)
+        console.log(userId)
+        // 메시지 보낸 사람이 현재 접속한 사용자인 경우
+        if (data.user.id == userId) {
+            div.classList.add("justify-content-start");
+        } else {
+            div.classList.add("justify-content-end", "align-items-end");
+        }
+
+        let smallTime = document.createElement("small");
+        smallTime.classList.add("text-muted");
+        smallTime.textContent = data.time; // 메시지 보낸 시간 설정
+
+        let smallName = document.createElement("small");
+        smallName.classList.add("text-muted");
+        smallName.textContent = data.user.name; // 메시지 보낸 사람의 이름 설정
+
+        let messageDiv = document.createElement("div");
+        messageDiv.textContent = data.message; // 메시지 내용 설정
+
+        // 요소들을 DOM에 추가
+        div.appendChild(smallTime);
+        div.appendChild(smallName);
+        div.appendChild(messageDiv);
+        li.appendChild(div);
+        ul.appendChild(li);
+    };
+
     const scrollToBottom = () => {
         const chatList = document.getElementById("chatList");
         chatList.scrollTop = chatList.scrollHeight;
     }
 
-    let socket;
-    const roomId = document.getElementById("roomId").value;
-    const userId = document.getElementById("userId").value;
-    let o = document.getElementById("output");
-    let userField = document.getElementById("username");
-    let messageField = document.getElementById("message");
+    const sendMessage = () => {
+        let jsonData = {};
+        jsonData["action"] = "broadcast";
+        jsonData["roomId"] = roomId;
+        jsonData["userId"] = userId;
+        jsonData["message"] = messageInput.value;
+        socket.send(JSON.stringify(jsonData));
+        messageInput.value = "";
+    }
 
     window.onbeforeunload = function () {
         let jsonData = {};
@@ -94,6 +138,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
+
         socket = new WebSocket("ws://127.0.0.1:8080/ws");
 
         socket.onopen = () => {
@@ -108,24 +153,12 @@
 
             switch (data.action) {
                 case "join":
-                    console.log(data.message);
-                    break;
-
-                case "list_users":
-                    let ul = document.getElementById("online_users");
-                    while (ul.firstChild) ul.removeChild(ul.firstChild);
-
-                    if (data.connected_users.length > 0) {
-                        data.connected_users.forEach(function (item) {
-                            let li = document.createElement("li");
-                            li.appendChild(document.createTextNode(item));
-                            ul.appendChild(li);
-                        })
-                    }
+                    console.log("User: " + data.user.name + " has joined the chatroom");
                     break;
 
                 case "broadcast":
-                    o.innerHTML = o.innerHTML + data.message + "<br>";
+                    makeMessageDom(data);
+                    scrollToBottom();
                     break;
             }
         }
@@ -146,23 +179,7 @@
         //             socket.send(JSON.stringify(jsonData));
         // })
 
-        // document.getElementById("message").addEventListener("keydown", function (e) {
-        //     if (e.code === "Enter") {
-        //         if ((userField.value === "") || (messageField.value === "")) {
-        //             alert("Please enter a username and message");
-        //             return false;
-        //         }
-        //
-        //         if (!socket) {
-        //             console.error("Socket connection is not available");
-        //             return false;
-        //         }
-        //
-        //         e.preventDefault();
-        //         e.stopPropagation();
-        //         sendMessage();
-        //     }
-        // });
+
         //
         // document.getElementById("sendBtn").addEventListener("click", function () {
         //     if ((userField.value === "") || (messageField.value === "")) {
@@ -179,14 +196,32 @@
         // });
     });
 
-    const sendMessage = () => {
-        let jsonData = {};
-        jsonData["action"] = "broadcast";
-        jsonData["username"] = document.getElementById("username").value;
-        jsonData["message"] = document.getElementById("message").value;
-        socket.send(JSON.stringify(jsonData));
-        document.getElementById("message").value = "";
-    }
+    let debounceTimer; // 디바운스 타이머를 위한 변수
+
+    messageInput.addEventListener("keydown", function (e) {
+        if (e.code === "Enter") {
+            e.preventDefault(); // 기본 동작 방지
+            e.stopPropagation(); // 이벤트 전파 방지
+
+            clearTimeout(debounceTimer); // 이전 타이머가 있다면 취소
+
+            debounceTimer = setTimeout(() => { // 0.5초 후에 메시지 전송
+                const messageValue = this.value.trim();
+
+                if (messageValue === "") {
+                    alert("메세지를 입력해주세요");
+                    return;
+                }
+                if (!socket) {
+                    console.error("채팅방 연결에 오류가 발생했습니다.");
+                    return;
+                }
+
+                sendMessage(); // 실제 메시지 전송 함수 호출
+                this.value = ""; // 입력 필드 초기화
+            }, 100); // 0.1초 딜레이
+        }
+    });
 
 </script>
 </html>

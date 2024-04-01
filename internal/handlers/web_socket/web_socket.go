@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 	"ws/internal/service/userService"
 )
 
@@ -65,17 +66,13 @@ func ListenToWsChannel() {
 			chatroomSession.Participants[userId] = UserSession{Conn: request.Conn, Username: accessUser.Name}
 			log.Printf("User %d joined room %d", userId, roomId)
 
+			location, err := time.LoadLocation("Asia/Seoul")
+			currentTime := time.Now().UTC().In(location)
+			currentTimeFormat := currentTime.Format("1/02 15:04:05")
 			response.Action = "join"
-			response.ConnectedUserId = request.UserId
+			response.User = UserSocketDto{Id: accessUser.Id, Name: accessUser.Name}
+			response.Time = currentTimeFormat
 			response.Message = fmt.Sprintf("User %d joined room %d", userId, roomId)
-			broadcastToRoom(request, response)
-
-		case "username":
-			// get a list of all clients and send it back
-			//clients[e.Conn] = e.Username
-			//users := getUserList()
-			response.Action = "list_users"
-			response.ConnectedUserId = request.UserId
 			broadcastToRoom(request, response)
 
 		case "left":
@@ -88,8 +85,24 @@ func ListenToWsChannel() {
 			broadcastToRoom(request, response)
 
 		case "broadcast":
+			roomId, userId, err := parseIds(request.RoomId, request.UserId)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			log.Println("Broadcasting message to room", roomId)
+			accessUser := userService.FindUser(userId)
+			if accessUser == nil {
+				log.Printf("User not found: %d\n", userId)
+				continue
+			}
+
 			response.Action = "broadcast"
-			response.ConnectedUserId = request.UserId
+			location, err := time.LoadLocation("Asia/Seoul")
+			currentTime := time.Now().UTC().In(location)
+			currentTimeFormat := currentTime.Format("1/02 15:04:05")
+			response.User = UserSocketDto{Id: accessUser.Id, Name: accessUser.Name}
+			response.Time = currentTimeFormat
 			response.Message = request.Message
 			broadcastToRoom(request, response)
 		}
