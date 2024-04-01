@@ -43,14 +43,12 @@
                 {{end}}
             </ul>
             <!-- 채팅 입력 -->
-            <form id="chatForm" action="/send" method="POST">
-                <div class="input-group mb-3">
-                    <input id="roomId" type="hidden" name="room_id" value="{{.RoomId}}" />
-                    <input id="userId" type="hidden" name="user_id" value="{{.AccessUser.Id}}" />
-                    <textarea class="form-control" id="messageInput" name="message" rows="1" placeholder="메시지를 입력하세요..."></textarea>
-                    <button type="submit" class="btn btn-primary">보내기</button>
-                </div>
-            </form>
+            <div class="input-group mb-3">
+                <input id="roomId" type="hidden" name="room_id" value="{{.RoomId}}" />
+                <input id="userId" type="hidden" name="user_id" value="{{.AccessUser.Id}}" />
+                <textarea class="form-control" id="messageInput" name="message" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+                <button id="sendBtn" class="btn btn-primary">보내기</button>
+            </div>
         </div>
 
         <!-- 참여자 목록 -->
@@ -74,154 +72,130 @@
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
-    let socket;
-    const roomId = document.getElementById("roomId").value;
-    let userId = document.getElementById("userId").value;
+let socket;
+const roomId = document.getElementById("roomId").value;
+let userId = document.getElementById("userId").value;
 
-    const messageInput = document.getElementById("messageInput");
+const messageInput = document.getElementById("messageInput");
 
-    const makeMessageDom = (data) => {
-        let ul = document.getElementById("chatList");
-        let li = document.createElement("li");
-        li.classList.add("list-group-item");
+const makeMessageDom = (data) => {
+    let ul = document.getElementById("chatList");
+    let li = document.createElement("li");
+    li.classList.add("list-group-item");
 
-        let div = document.createElement("div");
-        div.classList.add("d-flex", "w-100", "flex-column", "mb-1");
-        console.log(data.user.id)
-        console.log(userId)
-        // 메시지 보낸 사람이 현재 접속한 사용자인 경우
-        if (data.user.id == userId) {
-            div.classList.add("justify-content-start");
-        } else {
-            div.classList.add("justify-content-end", "align-items-end");
-        }
+    let div = document.createElement("div");
+    div.classList.add("d-flex", "w-100", "flex-column", "mb-1");
+    console.log(data.user.id)
+    console.log(userId)
+    // 메시지 보낸 사람이 현재 접속한 사용자인 경우
+    if (data.user.id == userId) {
+        div.classList.add("justify-content-start");
+    } else {
+        div.classList.add("justify-content-end", "align-items-end");
+    }
 
-        let smallTime = document.createElement("small");
-        smallTime.classList.add("text-muted");
-        smallTime.textContent = data.time; // 메시지 보낸 시간 설정
+    let smallTime = document.createElement("small");
+    smallTime.classList.add("text-muted");
+    smallTime.textContent = data.time; // 메시지 보낸 시간 설정
 
-        let smallName = document.createElement("small");
-        smallName.classList.add("text-muted");
-        smallName.textContent = data.user.name; // 메시지 보낸 사람의 이름 설정
+    let smallName = document.createElement("small");
+    smallName.classList.add("text-muted");
+    smallName.textContent = data.user.name; // 메시지 보낸 사람의 이름 설정
 
-        let messageDiv = document.createElement("div");
-        messageDiv.textContent = data.message; // 메시지 내용 설정
+    let messageDiv = document.createElement("div");
+    messageDiv.textContent = data.message; // 메시지 내용 설정
 
-        // 요소들을 DOM에 추가
-        div.appendChild(smallTime);
-        div.appendChild(smallName);
-        div.appendChild(messageDiv);
-        li.appendChild(div);
-        ul.appendChild(li);
+    // 요소들을 DOM에 추가
+    div.appendChild(smallTime);
+    div.appendChild(smallName);
+    div.appendChild(messageDiv);
+    li.appendChild(div);
+    ul.appendChild(li);
+};
+
+const scrollToBottom = () => {
+    const chatList = document.getElementById("chatList");
+    chatList.scrollTop = chatList.scrollHeight;
+}
+
+const sendMessage = () => {
+    socket.send(JSON.stringify({action: "broadcast", userId: userId, roomId: roomId, message: messageInput.value}));
+    messageInput.value = "";
+}
+
+window.onbeforeunload = () => {
+    socket.send(JSON.stringify({action: "left", userId: userId, roomId: roomId}));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    scrollToBottom();
+
+    socket = new WebSocket("ws://127.0.0.1:8080/ws");
+
+    socket.onopen = () => {
+        console.log('Connected to the server');
+        socket.send(JSON.stringify({action: "join", userId: userId, roomId: roomId}));
     };
 
-    const scrollToBottom = () => {
-        const chatList = document.getElementById("chatList");
-        chatList.scrollTop = chatList.scrollHeight;
-    }
+    socket.onmessage = msg => {
+        let data = JSON.parse(msg.data);
+        console.log(data)
 
-    const sendMessage = () => {
-        let jsonData = {};
-        jsonData["action"] = "broadcast";
-        jsonData["roomId"] = roomId;
-        jsonData["userId"] = userId;
-        jsonData["message"] = messageInput.value;
-        socket.send(JSON.stringify(jsonData));
-        messageInput.value = "";
-    }
+        switch (data.action) {
+            case "join":
+                console.log("User: " + data.user.name + " has joined the chatroom");
+                break;
 
-    window.onbeforeunload = function () {
-        let jsonData = {};
-        jsonData["action"] = "left"
-        socket.send(JSON.stringify(jsonData));
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        scrollToBottom();
-
-        socket = new WebSocket("ws://127.0.0.1:8080/ws");
-
-        socket.onopen = () => {
-            console.log('Connected to the server');
-            socket.send(JSON.stringify({action: "join", userId: userId, roomId: roomId }));
-        };
-
-        socket.onmessage = msg => {
-            let data = JSON.parse(msg.data);
-            console.log(data)
-            console.log("Action is", data.action);
-
-            switch (data.action) {
-                case "join":
-                    console.log("User: " + data.user.name + " has joined the chatroom");
-                    break;
-
-                case "broadcast":
-                    makeMessageDom(data);
-                    scrollToBottom();
-                    break;
-            }
+            case "broadcast":
+                makeMessageDom(data);
+                scrollToBottom();
+                break;
         }
+    }
 
-        socket.onclose = () => {
-            console.log('Connection to the server closed');
-        };
+    socket.onclose = () => {
+        console.log('Connection to the server closed');
+    };
 
-        socket.onerror = (error) => {
-            console.error('Error:', error);
-        };
+    socket.onerror = (error) => {
+        console.error('Error:', error);
+    };
+});
 
-        // let userInput = document.getElementById("username");
-        //         userInput.addEventListener("change", function () {
-        //             let jsonData = {};
-        //             jsonData["action"] = "username";
-        //             jsonData["username"] = this.value;
-        //             socket.send(JSON.stringify(jsonData));
-        // })
+const validationSendMessage = (message) => {
+    if (message === "") {
+        alert("메세지를 입력해주세요");
+        return false;
+    }
+    if (!socket) {
+        console.error("채팅방 연결에 오류가 발생했습니다.");
+        return false;
+    }
+    return true;
+}
 
+let debounceTimer;
+messageInput.addEventListener("keydown", function (e) {
+    if (e.code === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
 
-        //
-        // document.getElementById("sendBtn").addEventListener("click", function () {
-        //     if ((userField.value === "") || (messageField.value === "")) {
-        //         alert("Please enter a username and message");
-        //         return false;
-        //     }
-        //
-        //     if (!socket) {
-        //         console.error("Socket connection is not available");
-        //         return false;
-        //     }
-        //
-        //     sendMessage();
-        // });
-    });
+        clearTimeout(debounceTimer);
 
-    let debounceTimer; // 디바운스 타이머를 위한 변수
+        debounceTimer = setTimeout(() => {
+            const messageValue = this.value.trim();
+            validationSendMessage(messageValue);
+            sendMessage();
+            this.value = "";
+        }, 100); // 0.1초 딜레이
+    }
+});
 
-    messageInput.addEventListener("keydown", function (e) {
-        if (e.code === "Enter") {
-            e.preventDefault(); // 기본 동작 방지
-            e.stopPropagation(); // 이벤트 전파 방지
-
-            clearTimeout(debounceTimer); // 이전 타이머가 있다면 취소
-
-            debounceTimer = setTimeout(() => { // 0.5초 후에 메시지 전송
-                const messageValue = this.value.trim();
-
-                if (messageValue === "") {
-                    alert("메세지를 입력해주세요");
-                    return;
-                }
-                if (!socket) {
-                    console.error("채팅방 연결에 오류가 발생했습니다.");
-                    return;
-                }
-
-                sendMessage(); // 실제 메시지 전송 함수 호출
-                this.value = ""; // 입력 필드 초기화
-            }, 100); // 0.1초 딜레이
-        }
-    });
-
+document.getElementById("sendBtn").addEventListener("click", function () {
+    const messageValue = messageInput.value.trim();
+    validationSendMessage(messageValue);
+    sendMessage();
+    messageInput.value = "";
+});
 </script>
 </html>

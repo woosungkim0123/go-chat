@@ -5,6 +5,7 @@ import (
 	"ws/internal/dto"
 	"ws/internal/service/userService"
 	"ws/internal/store/chatRepository"
+	"ws/internal/util/jsonReader"
 )
 
 // 채팅방이 있으면 채팅방을 반환하고 없으면 새로운 채팅방을 생성하여 반환
@@ -19,6 +20,20 @@ func GetChatroomByUserId(accessUserId, otherUserId int) *dto.ChatroomDto {
 	chatroomDto := convertChatroomDto(room, accessUserId)
 
 	return chatroomDto
+}
+
+func SaveMessage(roomId int, chatroomMessage domain.ChatroomMessage) {
+	saveChatroom(roomId, chatroomMessage)
+}
+
+func saveChatroom(roomId int, chatroomMessage domain.ChatroomMessage) {
+	allChatroom := chatRepository.GetAllChatroom()
+	for i, room := range allChatroom {
+		if room.RoomID == roomId {
+			allChatroom[i].Messages = append(room.Messages, chatroomMessage)
+		}
+	}
+	jsonReader.Write("internal/store/json/chatroom.json", allChatroom)
 }
 
 func findChatRoom(accessUserId, otherUserId int) *domain.Chatroom {

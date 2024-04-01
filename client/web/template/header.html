@@ -22,7 +22,11 @@
         if (navItem.pathname === url) {
             navItem.classList.add('text-white');
             continue;
+        } else if (navItem.pathname.includes("chat") && url.includes("chat")) {
+            navItem.classList.add('text-white');
+            continue;
         }
+
         navItem.classList.add('text-secondary');
     }
 

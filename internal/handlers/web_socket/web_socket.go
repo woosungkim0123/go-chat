@@ -5,6 +5,8 @@ import (
 	"log"
 	"strconv"
 	"time"
+	"ws/internal/domain"
+	"ws/internal/service/chatService"
 	"ws/internal/service/userService"
 )
 
@@ -76,12 +78,29 @@ func ListenToWsChannel() {
 			broadcastToRoom(request, response)
 
 		case "left":
-			response.Action = "list_users"
-			//delete(clients, request.Conn)
-			//log.Println("Client left" + e.Username)
+			roomId, userId, err := parseIds(request.RoomId, request.UserId)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
 
-			//users := getUserList()
-			//response.ConnectedUsers = users
+			leftUser := userService.FindUser(userId)
+			if leftUser == nil {
+				log.Printf("User not found: %d\n", userId)
+				continue
+			}
+
+			chatroomSession, exists := ActiveChatrooms[roomId]
+			if !exists {
+				log.Printf("Room ID %d not found\n", roomId)
+				return
+			}
+
+			delete(chatroomSession.Participants, userId)
+
+			response.Action = "left"
+			response.User = UserSocketDto{Id: leftUser.Id, Name: leftUser.Name}
+			response.Message = fmt.Sprintf("User %d left room %d", userId, roomId)
 			broadcastToRoom(request, response)
 
 		case "broadcast":
@@ -96,10 +115,19 @@ func ListenToWsChannel() {
 				log.Printf("User not found: %d\n", userId)
 				continue
 			}
-
-			response.Action = "broadcast"
 			location, err := time.LoadLocation("Asia/Seoul")
 			currentTime := time.Now().UTC().In(location)
+
+			// 데이터베이스에 저장(임시적으로 Json)
+			chatroomMessage := domain.ChatroomMessage{
+				Message: request.Message,
+				User:    *accessUser,
+				Time:    currentTime,
+			}
+			chatService.SaveMessage(roomId, chatroomMessage)
+
+			response.Action = "broadcast"
+
 			currentTimeFormat := currentTime.Format("1/02 15:04:05")
 			response.User = UserSocketDto{Id: accessUser.Id, Name: accessUser.Name}
 			response.Time = currentTimeFormat
@@ -123,19 +151,19 @@ func broadcastToRoom(request WsJsonRequest, response WsJsonResponse) {
 	}
 
 	var toDelete []int
-	for userID, userSession := range chatroomSession.Participants {
+	for uId, userSession := range chatroomSession.Participants {
 		err := userSession.Conn.WriteJSON(response)
 		if err != nil {
 			log.Println("Error sending message to websocket:", err)
-			toDelete = append(toDelete, userID)
+			toDelete = append(toDelete, uId)
 			continue
 		}
 	}
 
 	// 클라이언트와 연결이 유효하지 않다고 판단되면 해당 클라이언트를 삭제합니다.
-	for _, userID := range toDelete {
-		delete(chatroomSession.Participants, userID) // 안전하게 삭제
-		log.Printf("Removed user %d due to error\n", userID)
+	for _, uId := range toDelete {
+		delete(chatroomSession.Participants, uId) // 안전하게 삭제
+		log.Printf("Removed user %d due to error\n", uId)
 	}
 }
 
@@ -152,14 +180,3 @@ func parseIds(roomIdStr, userIdStr string) (int, int, error) {
 
 	return roomId, userId, nil
 }
-
-//func getUserList() []string {
-//	var userList []string
-//	for _, x := range clients {
-//		if x != "" {
-//			userList = append(userList, x)
-//		}
-//	}
-//	sort.Strings(userList)
-//	return userList
-//}
