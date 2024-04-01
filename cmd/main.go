@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"ws/config"
 	"ws/internal/handlers"
+	"ws/internal/handlers/web_socket"
 )
 
 func main() {
-	go handlers.ListenToWsChannel()
+	go web_socket.ListenToWsChannel()
 
 	startServer()
 }

@@ -45,6 +45,8 @@
             <!-- 채팅 입력 -->
             <form id="chatForm" action="/send" method="POST">
                 <div class="input-group mb-3">
+                    <input id="roomId" type="hidden" name="room_id" value="{{.RoomId}}" />
+                    <input id="userId" type="hidden" name="user_id" value="{{.AccessUser.Id}}" />
                     <textarea class="form-control" id="messageInput" name="message" rows="1" placeholder="메시지를 입력하세요..."></textarea>
                     <button type="submit" class="btn btn-primary">보내기</button>
                 </div>
@@ -78,7 +80,8 @@
     }
 
     let socket;
-
+    const roomId = document.getElementById("roomId").value;
+    const userId = document.getElementById("userId").value;
     let o = document.getElementById("output");
     let userField = document.getElementById("username");
     let messageField = document.getElementById("message");
@@ -95,6 +98,7 @@
 
         socket.onopen = () => {
             console.log('Connected to the server');
+            socket.send(JSON.stringify({action: "join", userId: userId, roomId: roomId }));
         };
 
         socket.onmessage = msg => {
@@ -103,6 +107,10 @@
             console.log("Action is", data.action);
 
             switch (data.action) {
+                case "join":
+                    console.log(data.message);
+                    break;
+
                 case "list_users":
                     let ul = document.getElementById("online_users");
                     while (ul.firstChild) ul.removeChild(ul.firstChild);

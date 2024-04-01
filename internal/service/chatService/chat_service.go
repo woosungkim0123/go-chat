@@ -80,7 +80,7 @@ func convertChatroomDto(room *domain.Chatroom, accessUserId int) *dto.ChatroomDt
 	}
 
 	return &dto.ChatroomDto{
-		RoomID:       room.RoomID,
+		RoomId:       room.RoomID,
 		RoomType:     room.RoomType,
 		Participants: userDtos,
 		AccessUser:   accessUserDto,
