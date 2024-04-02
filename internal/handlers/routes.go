@@ -24,5 +24,7 @@ func authRouter(routerUrl string, mux *pat.PatternServeMux) {
 }
 
 func chatRouter(routerUrl string, mux *pat.PatternServeMux) {
+	mux.Get(routerUrl, middleware.AuthMiddleware(http.HandlerFunc(ChatList)))
 	mux.Get(routerUrl+"/:id", middleware.AuthMiddleware(http.HandlerFunc(Chat)))
+
 }

@@ -13,3 +13,10 @@ type ChatMessageDto struct {
 	User    UserDto `json:"user"`
 	Time    string  `json:"time"`
 }
+
+type ChatroomListDto struct {
+	RoomId   int     `json:"roomId"`
+	RoomType string  `json:"roomType"`
+	Audience UserDto `json:"audience"`
+	Message  string  `json:"message"`
+}

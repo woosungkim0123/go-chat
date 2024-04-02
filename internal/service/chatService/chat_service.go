@@ -26,6 +26,47 @@ func SaveMessage(roomId int, chatroomMessage domain.ChatroomMessage) {
 	saveChatroom(roomId, chatroomMessage)
 }
 
+func GetChatList(userId int) []dto.ChatroomListDto {
+	chatroomList := getUserChatList(userId)
+
+	// ChatroomListDto로 변환
+	var chatroomListDto []dto.ChatroomListDto
+	for _, room := range chatroomList {
+		var message string
+		if len(room.Messages) > 0 {
+			message = room.Messages[len(room.Messages)-1].Message
+		} else {
+			message = ""
+		}
+
+		var audience dto.UserDto
+		for _, user := range room.Participants {
+			if user.Id != userId {
+				audience = dto.UserDto{Id: user.Id, Name: user.Name}
+			}
+		}
+
+		chatroomListDto = append(chatroomListDto, dto.ChatroomListDto{
+			RoomId:   room.RoomID,
+			RoomType: room.RoomType,
+			Audience: audience,
+			Message:  message,
+		})
+	}
+	return chatroomListDto
+}
+
+func getUserChatList(userId int) []domain.Chatroom {
+	allChatroom := chatRepository.GetAllChatroom()
+	var userChatList []domain.Chatroom
+	for _, room := range allChatroom {
+		if contains(room.Participants, userId) {
+			userChatList = append(userChatList, room)
+		}
+	}
+	return userChatList
+}
+
 func saveChatroom(roomId int, chatroomMessage domain.ChatroomMessage) {
 	allChatroom := chatRepository.GetAllChatroom()
 	for i, room := range allChatroom {
