@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"ws/config"
+	"ws/config/database"
 	"ws/internal/handlers"
 	"ws/internal/handlers/web_socket"
 )
@@ -20,7 +21,10 @@ func startServer() {
 	container := handlers.NewContainer()
 	defer container.DBManager.Close()
 
+	database.NewInitializer(container.DBManager).Init() // 초기 데이터 생성 (스키마, 임시 데이터)
+
 	if err := http.ListenAndServe(":"+serverConfig.Port, handlers.NewRouter(container).Routes()); err != nil {
-		log.Fatalf("Error starting server: %s", err)
+		log.Printf("Error starting server: %s", err)
+		panic(err)
 	}
 }

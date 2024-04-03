@@ -31,7 +31,7 @@ func (h *Handler) GetChatList(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value("uid")
 	userId, _ := converter.ConvertToInt(uid)
 
-	chatlist := h.service.GetChatList(userId)
+	chatListDto := h.service.GetChatListByUserId(userId)
 
-	template.RenderWithHeader(w, "chatlist", &chatlist)
+	template.RenderWithHeader(w, "chatlist", &chatListDto)
 }
