@@ -10,15 +10,17 @@ import (
 
 func main() {
 	go web_socket.ListenToWsChannel()
-
 	startServer()
 }
 
 func startServer() {
-	serverInfo := config.Configuration.ServerInfo
-	log.Printf("Starting server on %s:%s", serverInfo.Host, serverInfo.Port)
+	serverConfig := config.Configuration.ServerConfig
+	log.Printf("Starting server on %s:%s", serverConfig.Host, serverConfig.Port)
 
-	if err := http.ListenAndServe(serverInfo.Host+":"+serverInfo.Port, handlers.Routes()); err != nil {
+	container := handlers.NewContainer()
+	defer container.DBManager.Close()
+
+	if err := http.ListenAndServe(":"+serverConfig.Port, handlers.NewRouter(container).Routes()); err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
 }

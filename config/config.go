@@ -5,19 +5,19 @@ import (
 	"ws/internal/util/jsonReader"
 )
 
-type serverInfo struct {
+type serverConfig struct {
 	Host string `json:"host"`
 	Port string `json:"port"`
 }
 
-type sessionInfo struct {
+type sessionConfig struct {
 	EncryptionKey string `json:"encryptionKey"`
 	MaxAge        int    `json:"maxAge"`
 }
 
 type configuration struct {
-	ServerInfo  serverInfo  `json:"serverInfo"`
-	SessionInfo sessionInfo `json:"sessionInfo"`
+	ServerConfig  serverConfig  `json:"serverConfig"`
+	SessionConfig sessionConfig `json:"sessionConfig"`
 }
 
 var Configuration = configuration{}
@@ -30,10 +30,10 @@ func init() {
 }
 
 func setSessionStore() {
-	Store = sessions.NewCookieStore([]byte(Configuration.SessionInfo.EncryptionKey))
+	Store = sessions.NewCookieStore([]byte(Configuration.SessionConfig.EncryptionKey))
 	Store.Options = &sessions.Options{
 		Path:     "/",
-		MaxAge:   Configuration.SessionInfo.MaxAge,
+		MaxAge:   Configuration.SessionConfig.MaxAge,
 		HttpOnly: true,
 	}
 }

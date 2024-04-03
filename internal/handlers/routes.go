@@ -6,25 +6,32 @@ import (
 	"ws/internal/middleware"
 )
 
-func Routes() http.Handler {
+type Router struct {
+	Container *Container
+	mux       *pat.PatternServeMux
+}
+
+func NewRouter(container *Container) *Router {
 	mux := pat.New()
-	mux.Get("/", middleware.AuthMiddleware(http.HandlerFunc(Home)))
-
-	authRouter("/login", mux)
-
-	chatRouter("/chat", mux)
-	mux.Get("/ws", http.HandlerFunc(WsEndPoint))
-	return mux
+	return &Router{Container: container, mux: mux}
 }
 
-func authRouter(routerUrl string, mux *pat.PatternServeMux) {
-	mux.Get(routerUrl, http.HandlerFunc(Login))
-	mux.Post(routerUrl, http.HandlerFunc(DoLogin))
-	mux.Get("/logout", http.HandlerFunc(DoLogout))
+func (r *Router) Routes() http.Handler {
+	r.mux.Get("/", middleware.AuthMiddleware(http.HandlerFunc(Home)))
+	r.setAuthRouter("/user")
+	r.setChatRouter("/chatroom")
+	r.mux.Get("/ws", http.HandlerFunc(WsEndPoint))
+	return r.mux
 }
 
-func chatRouter(routerUrl string, mux *pat.PatternServeMux) {
-	mux.Get(routerUrl, middleware.AuthMiddleware(http.HandlerFunc(ChatList)))
-	mux.Get(routerUrl+"/:id", middleware.AuthMiddleware(http.HandlerFunc(Chat)))
+func (r *Router) setAuthRouter(url string) {
+	r.mux.Get(url, http.HandlerFunc(Login))
+	r.mux.Post(url, http.HandlerFunc(DoLogin))
+	r.mux.Get("/logout", http.HandlerFunc(DoLogout))
+}
 
+func (r *Router) setChatRouter(url string) {
+	ch := r.Container.ChatroomHandler
+	r.mux.Get(url, middleware.AuthMiddleware(http.HandlerFunc(ch.GetChatList)))
+	r.mux.Get(url+"/:id", middleware.AuthMiddleware(http.HandlerFunc(ch.GetSingleChatroom)))
 }
