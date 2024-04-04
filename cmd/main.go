@@ -6,11 +6,10 @@ import (
 	"ws/config"
 	"ws/config/database"
 	"ws/internal/handlers"
-	"ws/internal/handlers/web_socket"
 )
 
 func main() {
-	go web_socket.ListenToWsChannel()
+	//go web_socket.ListenToWsChannel()
 	startServer()
 }
 

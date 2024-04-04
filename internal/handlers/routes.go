@@ -17,21 +17,27 @@ func NewRouter(container *Container) *Router {
 }
 
 func (r *Router) Routes() http.Handler {
-	r.mux.Get("/", middleware.AuthMiddleware(http.HandlerFunc(Home)))
-	r.setAuthRouter("/user")
+	r.setWebRouter("/")
+	r.setAuthRouter("/auth")
 	r.setChatRouter("/chatroom")
 	r.mux.Get("/ws", http.HandlerFunc(WsEndPoint))
 	return r.mux
 }
 
+func (r *Router) setWebRouter(url string) {
+	wh := r.Container.WebHandler
+	r.mux.Get(url, middleware.AuthMiddleware(http.HandlerFunc(wh.Home)))
+}
+
 func (r *Router) setAuthRouter(url string) {
-	r.mux.Get(url, http.HandlerFunc(Login))
-	r.mux.Post(url, http.HandlerFunc(DoLogin))
-	r.mux.Get("/logout", http.HandlerFunc(DoLogout))
+	ah := r.Container.AuthHandler
+	r.mux.Get(url+"/login", http.HandlerFunc(ah.GetLoginPage))
+	r.mux.Post(url+"/login", http.HandlerFunc(ah.Login))
+	r.mux.Get("/logout", http.HandlerFunc(ah.Logout))
 }
 
 func (r *Router) setChatRouter(url string) {
 	ch := r.Container.ChatroomHandler
 	r.mux.Get(url, middleware.AuthMiddleware(http.HandlerFunc(ch.GetChatList)))
-	r.mux.Get(url+"/:id", middleware.AuthMiddleware(http.HandlerFunc(ch.GetSingleChatroom)))
+	r.mux.Get(url+"/single", middleware.AuthMiddleware(http.HandlerFunc(ch.GetSingleChatroom)))
 }

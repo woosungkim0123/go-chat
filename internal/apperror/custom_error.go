@@ -1,6 +1,6 @@
-package apperrors
+package apperror
 
 type CustomError struct {
-	Code    string
+	Code    ErrorCode
 	Message string
 }
