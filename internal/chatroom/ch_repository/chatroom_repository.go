@@ -1,4 +1,4 @@
-package repository
+package ch_repository
 
 import (
 	"encoding/json"
@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"go.etcd.io/bbolt"
 	"log"
-	"ws/internal/chatroom/domain"
+	"ws/internal/chatroom/ch_domain"
 	"ws/internal/chatroom/dto"
-	apperror2 "ws/internal/common/apperror"
+	"ws/internal/common/apperror"
 	"ws/internal/common/util"
 )
 
@@ -18,7 +18,7 @@ type ChatroomRepository struct {
 	chatroomMessage string
 }
 
-func NewRepository(db *bbolt.DB) *ChatroomRepository {
+func NewChatroomRepository(db *bbolt.DB) *ChatroomRepository {
 	return &ChatroomRepository{db: db, chatroom: "chatroom", chatroomMessage: "chatroom_message"}
 }
 
@@ -32,12 +32,12 @@ func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []dto.ChatroomW
 		}
 
 		return b.ForEach(func(k, v []byte) error {
-			var room domain.Chatroom
+			var room ch_domain.Chatroom
 			if err := json.Unmarshal(v, &room); err != nil {
 				return fmt.Errorf("failed to unmarshal chatroom: %v", err)
 			}
 
-			if (room.Type == domain.Single || room.Type == domain.Mine) && r.containsParticipant(room.Participants, userID) {
+			if (room.Type == ch_domain.Single || room.Type == ch_domain.Mine) && r.containsParticipant(room.Participants, userID) {
 				lastMsg := r.getLastMessage(room.ID)
 				chatroomDto := dto.NewChatroomWithLastMessageDTO(&room, lastMsg)
 				chatroomListDto = append(chatroomListDto, *chatroomDto)
@@ -55,8 +55,8 @@ func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []dto.ChatroomW
 	return chatroomListDto
 }
 
-func (r *ChatroomRepository) GetMineChatroom(userID int) (*domain.Chatroom, *apperror2.CustomError) {
-	var mineChatroom *domain.Chatroom
+func (r *ChatroomRepository) GetMineChatroom(userID int) (*ch_domain.Chatroom, *apperror.CustomError) {
+	var mineChatroom *ch_domain.Chatroom
 	var FoundChatroomAndStopIterator = errors.New("found chatroom")
 
 	dbError := r.db.View(func(tx *bbolt.Tx) error {
@@ -66,12 +66,12 @@ func (r *ChatroomRepository) GetMineChatroom(userID int) (*domain.Chatroom, *app
 		}
 
 		chatroomResult := b.ForEach(func(k, v []byte) error {
-			var room domain.Chatroom
+			var room ch_domain.Chatroom
 			if jsonError := json.Unmarshal(v, &room); jsonError != nil {
-				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror2.FailJsonUnmarshal)
+				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror.FailJsonUnmarshal)
 			}
 
-			if room.Type == domain.Mine && r.containsParticipant(room.Participants, userID) {
+			if room.Type == ch_domain.Mine && r.containsParticipant(room.Participants, userID) {
 				mineChatroom = &room
 				return FoundChatroomAndStopIterator
 			}
@@ -80,7 +80,7 @@ func (r *ChatroomRepository) GetMineChatroom(userID int) (*domain.Chatroom, *app
 		})
 
 		if chatroomResult == nil {
-			return util.HandleError(fmt.Sprintf("failed to find mine chatroom with user id: %d", userID), apperror2.NotFoundMineChatroom)
+			return util.HandleError(fmt.Sprintf("failed to find mine chatroom with user id: %d", userID), apperror.NotFoundMineChatroom)
 		} else if errors.Is(chatroomResult, FoundChatroomAndStopIterator) {
 			return nil // 채팅방을 찾았으므로, 에러 없음
 		} else {
@@ -89,16 +89,16 @@ func (r *ChatroomRepository) GetMineChatroom(userID int) (*domain.Chatroom, *app
 	})
 
 	if dbError != nil {
-		if dbError.Error() == string(apperror2.NotFoundMineChatroom) {
-			return nil, &apperror2.CustomError{Code: apperror2.NotFoundMineChatroom, Message: "자신의 채팅방을 찾을 수 없습니다."}
+		if dbError.Error() == string(apperror.NotFoundMineChatroom) {
+			return nil, &apperror.CustomError{Code: apperror.NotFoundMineChatroom, Message: "자신의 채팅방을 찾을 수 없습니다."}
 		}
-		return nil, &apperror2.CustomError{Code: apperror2.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
+		return nil, &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
 	}
 
 	return mineChatroom, nil
 }
 
-func (r *ChatroomRepository) AddChatroom(chatroom *domain.Chatroom) *apperror2.CustomError {
+func (r *ChatroomRepository) AddChatroom(chatroom *ch_domain.Chatroom) *apperror.CustomError {
 	dbError := r.db.Update(func(tx *bbolt.Tx) error {
 		b, bucketError := util.GetBucket(tx, r.chatroom)
 		if bucketError != nil {
@@ -129,15 +129,15 @@ func (r *ChatroomRepository) AddChatroom(chatroom *domain.Chatroom) *apperror2.C
 
 	if dbError != nil {
 		log.Printf("failed to add chatroom: %v", dbError)
-		return &apperror2.CustomError{Code: apperror2.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
+		return &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
 	}
 
 	return nil
 }
 
 // GetChatroomMessages 채팅방 ID로 메시지 가져오기
-func (r *ChatroomRepository) GetChatroomMessages(chatroomID int) ([]domain.ChatroomMessage, *apperror2.CustomError) {
-	var messages []domain.ChatroomMessage
+func (r *ChatroomRepository) GetChatroomMessages(chatroomID int) ([]ch_domain.ChatroomMessage, *apperror.CustomError) {
+	var messages []ch_domain.ChatroomMessage
 
 	dbError := r.db.View(func(tx *bbolt.Tx) error {
 		b, bucketError := util.GetBucket(tx, r.chatroom)
@@ -146,9 +146,9 @@ func (r *ChatroomRepository) GetChatroomMessages(chatroomID int) ([]domain.Chatr
 		}
 
 		return b.ForEach(func(k, v []byte) error {
-			var msg domain.ChatroomMessage
+			var msg ch_domain.ChatroomMessage
 			if jsonError := json.Unmarshal(v, &msg); jsonError != nil {
-				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror2.FailJsonUnmarshal)
+				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror.FailJsonUnmarshal)
 			}
 
 			if msg.RoomID == chatroomID {
@@ -159,13 +159,13 @@ func (r *ChatroomRepository) GetChatroomMessages(chatroomID int) ([]domain.Chatr
 	})
 
 	if dbError != nil {
-		return nil, &apperror2.CustomError{Code: apperror2.DataBaseProblem, Message: "데이터베이스에서 유저를 찾는 중 문제가 발생했습니다."}
+		return nil, &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에서 유저를 찾는 중 문제가 발생했습니다."}
 	}
 
 	return messages, nil
 }
 
-func (r *ChatroomRepository) containsParticipant(participants []domain.ChatroomParticipant, userID int) bool {
+func (r *ChatroomRepository) containsParticipant(participants []ch_domain.ChatroomParticipant, userID int) bool {
 	for _, p := range participants {
 		if p.ID == userID {
 			return true
@@ -174,8 +174,45 @@ func (r *ChatroomRepository) containsParticipant(participants []domain.ChatroomP
 	return false
 }
 
-func (r *ChatroomRepository) getLastMessage(roomID int) *domain.ChatroomMessage {
-	var lastMessage *domain.ChatroomMessage
+func (r *ChatroomRepository) SaveMessage(chatroomMessage ch_domain.ChatroomMessage) *apperror.CustomError {
+	dbError := r.db.Update(func(tx *bbolt.Tx) error {
+		b, bucketError := util.GetBucket(tx, r.chatroomMessage)
+		if bucketError != nil {
+			return bucketError
+		}
+
+		id, sequenceError := b.NextSequence()
+		if sequenceError != nil {
+			log.Printf("failed to get next sequence: %v", sequenceError)
+			return sequenceError
+		}
+		chatroomMessage.ID = int(id)
+
+		chatroomMessageData, jsonError := json.Marshal(chatroomMessage)
+		if jsonError != nil {
+			log.Printf("failed to marshal chatroom message data: %v", jsonError)
+			return jsonError
+		}
+
+		idKey := fmt.Sprintf("%d", chatroomMessage.ID)
+		if err := b.Put([]byte(idKey), chatroomMessageData); err != nil {
+			log.Printf("failed to put chatroom message: %v", err)
+			return err
+		}
+
+		return nil
+	})
+
+	if dbError != nil {
+		log.Printf("failed to add chatroom message: %v", dbError)
+		return &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
+	}
+
+	return nil
+}
+
+func (r *ChatroomRepository) getLastMessage(roomID int) *ch_domain.ChatroomMessage {
+	var lastMessage *ch_domain.ChatroomMessage
 
 	err := r.db.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(r.chatroomMessage))
@@ -184,7 +221,7 @@ func (r *ChatroomRepository) getLastMessage(roomID int) *domain.ChatroomMessage 
 		}
 
 		return b.ForEach(func(k, v []byte) error {
-			var msg domain.ChatroomMessage
+			var msg ch_domain.ChatroomMessage
 			if err := json.Unmarshal(v, &msg); err != nil {
 				return err
 			}

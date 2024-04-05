@@ -1,4 +1,4 @@
-package handler
+package ch_handler
 
 import (
 	"fmt"
@@ -7,18 +7,18 @@ import (
 	"strconv"
 	"ws/internal/auth/domain"
 	aservice "ws/internal/auth/service"
+	"ws/internal/chatroom/ch_service"
 	"ws/internal/chatroom/dto"
-	"ws/internal/chatroom/service"
 	"ws/internal/common/converter"
 	"ws/internal/common/template"
 )
 
 type ChatroomHandler struct {
-	chatroomService *service.ChatroomService
+	chatroomService *ch_service.ChatroomService
 	authService     *aservice.AuthService
 }
 
-func NewChatroomHandler(chatroomService *service.ChatroomService, authService *aservice.AuthService) *ChatroomHandler {
+func NewChatroomHandler(chatroomService *ch_service.ChatroomService, authService *aservice.AuthService) *ChatroomHandler {
 	return &ChatroomHandler{chatroomService: chatroomService, authService: authService}
 }
 
@@ -54,9 +54,9 @@ func (h *ChatroomHandler) convertStringToInt(str string) int {
 	return num
 }
 
-func (h *ChatroomHandler) getAccessUser(w http.ResponseWriter, r *http.Request) *domain.User {
+func (h *ChatroomHandler) getAccessUser(_ http.ResponseWriter, r *http.Request) *domain.User {
 	accessUserID := r.Context().Value("userID").(int)
-	user, err := h.authService.GetUserByID(accessUserID)
+	user, err := h.authService.FindUserByID(accessUserID)
 	if err != nil {
 		log.Printf("failed to get access user: %v", err)
 		// TODO redirect

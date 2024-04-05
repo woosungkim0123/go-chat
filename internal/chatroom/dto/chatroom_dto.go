@@ -2,12 +2,12 @@ package dto
 
 import (
 	"time"
-	"ws/internal/chatroom/domain"
+	"ws/internal/chatroom/ch_domain"
 )
 
 type ChatroomDTO struct {
 	ID           int                      `json:"ID"`
-	Type         domain.RoomType          `json:"type"`
+	Type         ch_domain.RoomType       `json:"type"`
 	Participants []ChatroomParticipantDTO `json:"participants"`
 	Messages     []ChatroomMessageDTO     `json:"messages"`
 }
@@ -22,13 +22,13 @@ type ChatroomMessageDTO struct {
 	ID           int                    `json:"ID"`
 	RoomID       int                    `json:"roomID"`
 	Content      string                 `json:"content"`
-	Type         domain.MessageType     `json:"type"`
+	Type         ch_domain.MessageType  `json:"type"`
 	FileLocation string                 `json:"fileLocation"`
 	Participant  ChatroomParticipantDTO `json:"participant"`
 	Time         time.Time              `json:"time"`
 }
 
-func NewChatroomDTO(chatroom *domain.Chatroom, chatroomMessages []domain.ChatroomMessage) *ChatroomDTO {
+func NewChatroomDTO(chatroom *ch_domain.Chatroom, chatroomMessages []ch_domain.ChatroomMessage) *ChatroomDTO {
 	dto := &ChatroomDTO{
 		ID:   chatroom.ID,
 		Type: chatroom.Type,

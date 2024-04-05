@@ -1,32 +1,32 @@
-package service
+package ch_service
 
 import (
 	"log"
 	udomain "ws/internal/auth/domain"
 	"ws/internal/auth/service"
-	"ws/internal/chatroom/domain"
+	"ws/internal/chatroom/ch_domain"
+	"ws/internal/chatroom/ch_repository"
 	"ws/internal/chatroom/dto"
-	"ws/internal/chatroom/repository"
-	apperror2 "ws/internal/common/apperror"
+	"ws/internal/common/apperror"
 )
 
 type ChatroomService struct {
-	chatroomRepository *repository.ChatroomRepository
+	chatroomRepository *ch_repository.ChatroomRepository
 	authService        *service.AuthService
 }
 
-func NewChatroomService(chatroomRepository *repository.ChatroomRepository, authService *service.AuthService) *ChatroomService {
+func NewChatroomService(chatroomRepository *ch_repository.ChatroomRepository, authService *service.AuthService) *ChatroomService {
 	return &ChatroomService{chatroomRepository: chatroomRepository, authService: authService}
 }
 
-func (s *ChatroomService) GetChatroomByUserID(accessUser *udomain.User, opponentUserID int) (*dto.ChatroomDTO, *apperror2.CustomError) {
+func (s *ChatroomService) GetChatroomByUserID(accessUser *udomain.User, opponentUserID int) (*dto.ChatroomDTO, *apperror.CustomError) {
 	if s.isAccessMineChatroom(accessUser, opponentUserID) {
 		chatroom, err := s.getMyChatroom(accessUser)
 		if err != nil {
 			log.Printf("내 채팅방을 가져오는데 실패했습니다: %v", err)
 			return nil, err
 		}
-		var chatroomMessages []domain.ChatroomMessage
+		var chatroomMessages []ch_domain.ChatroomMessage
 		chatroomMessages, err = s.getChatroomMessages(chatroom.ID)
 		if err != nil {
 			log.Printf("채팅방 메시지를 가져오는데 실패했습니다: %v", err)
@@ -64,14 +64,18 @@ func (s *ChatroomService) GetChatroomByUserID(accessUser *udomain.User, opponent
 	return nil, nil
 }
 
+func (s *ChatroomService) SaveMessage(chatroomMessage ch_domain.ChatroomMessage) *apperror.CustomError {
+	return s.chatroomRepository.SaveMessage(chatroomMessage)
+}
+
 func (s *ChatroomService) isAccessMineChatroom(accessUser *udomain.User, opponentUserID int) bool {
 	return opponentUserID == 0 || accessUser.ID == opponentUserID
 }
 
-func (s *ChatroomService) getMyChatroom(user *udomain.User) (*domain.Chatroom, *apperror2.CustomError) {
+func (s *ChatroomService) getMyChatroom(user *udomain.User) (*ch_domain.Chatroom, *apperror.CustomError) {
 	chatroom, err := s.chatroomRepository.GetMineChatroom(user.ID)
 	if err != nil {
-		if err.Code == apperror2.NotFoundMineChatroom {
+		if err.Code == apperror.NotFoundMineChatroom {
 			chatroom, err = s.createMineChatroom(user)
 			if err != nil {
 				return nil, err
@@ -83,10 +87,10 @@ func (s *ChatroomService) getMyChatroom(user *udomain.User) (*domain.Chatroom, *
 	return chatroom, nil
 }
 
-func (s *ChatroomService) createMineChatroom(user *udomain.User) (*domain.Chatroom, *apperror2.CustomError) {
-	chatroom := domain.Chatroom{
-		Type: domain.Mine,
-		Participants: []domain.ChatroomParticipant{
+func (s *ChatroomService) createMineChatroom(user *udomain.User) (*ch_domain.Chatroom, *apperror.CustomError) {
+	chatroom := ch_domain.Chatroom{
+		Type: ch_domain.Mine,
+		Participants: []ch_domain.ChatroomParticipant{
 			{ID: user.ID, Name: user.Name, ProfileImage: user.ProfileImage},
 		},
 	}
@@ -100,7 +104,7 @@ func (s *ChatroomService) createMineChatroom(user *udomain.User) (*domain.Chatro
 	return &chatroom, nil
 }
 
-func (s *ChatroomService) getChatroomMessages(chatroomID int) ([]domain.ChatroomMessage, *apperror2.CustomError) {
+func (s *ChatroomService) getChatroomMessages(chatroomID int) ([]ch_domain.ChatroomMessage, *apperror.CustomError) {
 	return s.chatroomRepository.GetChatroomMessages(chatroomID)
 }
 

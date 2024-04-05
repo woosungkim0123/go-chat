@@ -2,6 +2,8 @@ package config
 
 import (
 	"github.com/gorilla/sessions"
+	"github.com/gorilla/websocket"
+	"net/http"
 	"ws/internal/common/jsonReader"
 )
 
@@ -24,9 +26,12 @@ var Configuration = configuration{}
 
 var Store *sessions.CookieStore
 
+var UpgradeConnection = websocket.Upgrader{}
+
 func init() {
-	jsonReader.ReadAndConvert("./config/config.json", &Configuration)
+	jsonReader.ReadAndConvert("internal/config/config.json", &Configuration)
 	setSessionStore()
+	setSocketUpgradeConnection("http://localhost:8080")
 }
 
 func setSessionStore() {
@@ -35,5 +40,19 @@ func setSessionStore() {
 		Path:     "/",
 		MaxAge:   Configuration.SessionConfig.MaxAge,
 		HttpOnly: true,
+	}
+}
+
+func setSocketUpgradeConnection(allowOrigin string) {
+	UpgradeConnection = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
+			if origin == allowOrigin {
+				return true
+			}
+			return false
+		},
 	}
 }

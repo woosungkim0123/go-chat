@@ -1,4 +1,4 @@
-package domain
+package ch_domain
 
 type RoomType string
 

@@ -1,17 +1,18 @@
-package handlers
+package router
 
 import (
 	"github.com/bmizerany/pat"
 	"net/http"
-	"ws/internal/middleware"
+	"ws/internal/common/middleware"
+	"ws/internal/config/di"
 )
 
 type Router struct {
-	Container *Container
+	Container *di.Container
 	mux       *pat.PatternServeMux
 }
 
-func NewRouter(container *Container) *Router {
+func NewRouter(container *di.Container) *Router {
 	mux := pat.New()
 	return &Router{Container: container, mux: mux}
 }
@@ -20,7 +21,7 @@ func (r *Router) Routes() http.Handler {
 	r.setWebRouter("/")
 	r.setAuthRouter("/auth")
 	r.setChatRouter("/chatroom")
-	r.mux.Get("/ws", http.HandlerFunc(WsEndPoint))
+	r.setWebSocketRouter("/ws")
 	return r.mux
 }
 
@@ -40,4 +41,9 @@ func (r *Router) setChatRouter(url string) {
 	ch := r.Container.ChatroomHandler
 	r.mux.Get(url, middleware.AuthMiddleware(http.HandlerFunc(ch.GetChatList)))
 	r.mux.Get(url+"/single", middleware.AuthMiddleware(http.HandlerFunc(ch.GetSingleChatroom)))
+}
+
+func (r *Router) setWebSocketRouter(url string) {
+	wh := r.Container.WebSocketHandler
+	r.mux.Get(url, http.HandlerFunc(wh.GetWebSocketEndPoint))
 }

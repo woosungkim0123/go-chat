@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"ws/config"
+	"ws/internal/config"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {

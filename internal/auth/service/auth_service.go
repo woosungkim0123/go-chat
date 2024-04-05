@@ -49,8 +49,8 @@ func (s *AuthService) GetUserListWithoutSelf(userID int) []dto.ProfileDto {
 	return s.convertUsersToProfileDtoList(users)
 }
 
-func (s *AuthService) GetUserByID(userID int) (*domain.User, *apperror.CustomError) {
-	user, err := s.findUserByID(userID)
+func (s *AuthService) findUserByID(userID int) (*domain.User, *apperror.CustomError) {
+	user, err := s.repository.FindByID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (s *AuthService) findUserByLoginID(loginID string) (*domain.User, *apperror
 	return s.repository.FindUserByLoginID(loginID)
 }
 
-func (s *AuthService) findUserByID(userID int) (*domain.User, *apperror.CustomError) {
+func (s *AuthService) FindUserByID(userID int) (*domain.User, *apperror.CustomError) {
 	return s.repository.FindByID(userID)
 }
 

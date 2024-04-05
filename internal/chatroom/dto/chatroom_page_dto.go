@@ -3,12 +3,12 @@ package dto
 import (
 	udomain "ws/internal/auth/domain"
 	"ws/internal/auth/dto"
-	"ws/internal/chatroom/domain"
+	"ws/internal/chatroom/ch_domain"
 )
 
 type ChatroomPageDTO struct {
 	ID           int                      `json:"ID"`
-	Type         domain.RoomType          `json:"type"`
+	Type         ch_domain.RoomType       `json:"type"`
 	Participants []ChatroomParticipantDTO `json:"participants"`
 	Messages     []ChatroomMessageDTO     `json:"messages"`
 	AccessUser   *dto.ProfileDto          `json:"accessUser"`

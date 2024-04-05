@@ -1,6 +1,8 @@
-package domain
+package ws_domain
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+)
 
 type WebSocketConnection struct {
 	*websocket.Conn
@@ -8,7 +10,7 @@ type WebSocketConnection struct {
 
 type UserSession struct {
 	Conn     *WebSocketConnection
-	Username string
+	UserName string
 }
 
 type ChatroomSession struct {

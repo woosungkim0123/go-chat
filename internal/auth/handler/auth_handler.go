@@ -3,10 +3,10 @@ package handler
 import (
 	"log"
 	"net/http"
-	"ws/config"
 	service2 "ws/internal/auth/service"
 	"ws/internal/common/apperror"
 	"ws/internal/common/template"
+	"ws/internal/config"
 )
 
 type AuthHandler struct {

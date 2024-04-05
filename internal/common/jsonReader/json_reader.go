@@ -10,13 +10,19 @@ func ReadAndConvert(filePath string, target interface{}) {
 	// 파일 열기
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Println("Open file error: ", err)
+		log.Println("open file error: ", err)
 		panic(err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Println("file close error: ", err)
+			panic(err)
+		}
+	}(file)
 
 	if err = json.NewDecoder(file).Decode(&target); err != nil {
-		log.Printf("Error decoding JSON: %v", err)
+		log.Printf("error decoding JSON: %v", err)
 		panic(err)
 	}
 }
