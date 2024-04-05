@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 	"ws/internal/auth/service"
+	"ws/internal/common/template"
 	"ws/internal/ui/dto"
-	"ws/internal/util/template"
 )
 
 type WebHandler struct {
@@ -19,7 +19,7 @@ func NewWebHandler(service *service.AuthService) *WebHandler {
 func (h *WebHandler) Home(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("userID")
 
-	profile, err := h.authService.GetMyProfile(userID.(int))
+	profile, err := h.authService.GetUserProfile(userID.(int))
 	if err != nil {
 		http.Redirect(w, r, h.loginPage+"?error=not_found_user", http.StatusSeeOther)
 		return

@@ -1,28 +1,29 @@
-package chatroom
+package dto
 
 import (
 	"time"
+	"ws/internal/chatroom/domain"
 )
 
 type ChatroomWithLastMessageDTO struct {
-	RoomID      int             `json:"roomId"`
-	RoomType    RoomType        `json:"roomType"`
+	RoomID      int             `json:"roomID"`
+	RoomType    domain.RoomType `json:"roomType"`
 	LastMessage *LastMessageDTO `json:"lastMessage,omitempty"`
 }
 
 type LastMessageDTO struct {
-	ID          int                       `json:"Id"`
+	ID          int                       `json:"ID"`
 	Content     string                    `json:"content"`
-	Type        MessageType               `json:"type"`
+	Type        domain.MessageType        `json:"type"`
 	Participant LastMessageParticipantDTO `json:"participant"`
 	Time        time.Time                 `json:"time"`
 }
 
 type LastMessageParticipantDTO struct {
-	ID int `json:"id"`
+	ID int `json:"ID"`
 }
 
-func NewChatroomWithLastMessageDTO(chatroom *Chatroom, message *ChatroomMessage) *ChatroomWithLastMessageDTO {
+func NewChatroomWithLastMessageDTO(chatroom *domain.Chatroom, message *domain.ChatroomMessage) *ChatroomWithLastMessageDTO {
 	dto := &ChatroomWithLastMessageDTO{
 		RoomID:   chatroom.ID,
 		RoomType: chatroom.Type,
@@ -34,7 +35,7 @@ func NewChatroomWithLastMessageDTO(chatroom *Chatroom, message *ChatroomMessage)
 			Content: message.Content,
 			Type:    message.Type,
 			Participant: LastMessageParticipantDTO{
-				ID: message.Participant.Id,
+				ID: message.Participant.ID,
 			},
 			Time: message.Time,
 		}

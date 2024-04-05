@@ -10,4 +10,6 @@ const (
 
 	NotFoundUserByLoginID ErrorCode = "NotFoundUserByLoginID"
 	NotFoundUserByID      ErrorCode = "NotFoundUserByID"
+
+	NotFoundMineChatroom ErrorCode = "NotFoundMineChatroom"
 )

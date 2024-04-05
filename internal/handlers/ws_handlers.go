@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"ws/internal/handlers/web_socket"
 )
 
 var allowOrigin = "http://localhost:8080"
@@ -30,8 +30,9 @@ func WsEndPoint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Client Connected to Endpoint")
+	fmt.Print(ws)
 
-	conn := web_socket.WebSocketConnection{Conn: ws}
+	//conn := web_socket.WebSocketConnection{Conn: ws}
 
-	go web_socket.ListenForWs(&conn) // 고루틴으로 듣기 시작
+	//go web_socket.ListenForWs(&conn) // 고루틴으로 듣기 시작
 }

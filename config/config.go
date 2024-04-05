@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/gorilla/sessions"
-	"ws/internal/util/jsonReader"
+	"ws/internal/common/jsonReader"
 )
 
 type serverConfig struct {

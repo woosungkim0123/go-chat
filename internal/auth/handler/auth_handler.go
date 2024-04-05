@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 	"ws/config"
-	"ws/internal/apperror"
 	service2 "ws/internal/auth/service"
-	"ws/internal/util/template"
+	"ws/internal/common/apperror"
+	"ws/internal/common/template"
 )
 
 type AuthHandler struct {

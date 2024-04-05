@@ -5,8 +5,9 @@ import (
 	ah "ws/internal/auth/handler"
 	"ws/internal/auth/repository"
 	"ws/internal/auth/service"
-	"ws/internal/chatroom"
 	ch "ws/internal/chatroom/handler"
+	repository2 "ws/internal/chatroom/repository"
+	cs "ws/internal/chatroom/service"
 	wh "ws/internal/ui/handler"
 )
 
@@ -15,7 +16,7 @@ type Container struct {
 	AuthHandler     *ah.AuthHandler
 	AuthService     *service.AuthService
 	ChatroomHandler *ch.ChatroomHandler
-	ChatroomService *chatroom.Service
+	ChatroomService *cs.ChatroomService
 	WebHandler      *wh.WebHandler
 }
 
@@ -26,9 +27,9 @@ func NewContainer() *Container {
 	authService := service.NewAuthService(authRepository)
 	authHandler := ah.NewAuthHandler(authService)
 
-	chatroomRepository := chatroom.NewRepository(dbManager.DB)
-	chatroomService := chatroom.NewService(chatroomRepository)
-	chatroomHandler := ch.NewChatroomHandler(chatroomService)
+	chatroomRepository := repository2.NewRepository(dbManager.DB)
+	chatroomService := cs.NewChatroomService(chatroomRepository, authService)
+	chatroomHandler := ch.NewChatroomHandler(chatroomService, authService)
 
 	webHandler := wh.NewWebHandler(authService)
 

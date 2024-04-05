@@ -20,19 +20,3 @@ func ReadAndConvert(filePath string, target interface{}) {
 		panic(err)
 	}
 }
-
-func Write(filePath string, target interface{}) {
-	// 파일 열기
-	file, err := os.Create(filePath)
-	if err != nil {
-		log.Println("Create file error: ", err)
-		panic(err)
-	}
-
-	defer file.Close()
-
-	if err = json.NewEncoder(file).Encode(&target); err != nil {
-		log.Printf("Error encoding JSON: %v", err)
-		panic(err)
-	}
-}

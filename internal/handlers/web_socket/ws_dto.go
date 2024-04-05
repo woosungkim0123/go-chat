@@ -1,5 +1,7 @@
 package web_socket
 
+import "ws/internal/auth/domain"
+
 type WsJsonResponse struct {
 	Action      string        `json:"action"`
 	User        UserSocketDto `json:"user"`
@@ -9,11 +11,11 @@ type WsJsonResponse struct {
 }
 
 type WsJsonRequest struct {
-	Action  string               `json:"action"`
-	UserId  string               `json:"userId"`
-	RoomId  string               `json:"roomId"`
-	Message string               `json:"message"`
-	Conn    *WebSocketConnection `json:"-"`
+	Action  string                      `json:"action"`
+	UserId  string                      `json:"userId"`
+	RoomId  string                      `json:"roomId"`
+	Message string                      `json:"message"`
+	Conn    *domain.WebSocketConnection `json:"-"`
 }
 
 type UserSocketDto struct {

@@ -1,16 +1,18 @@
-package chatroom
+package domain
 
-import "time"
+import (
+	"time"
+)
 
 type Chatroom struct {
-	ID           int                   `json:"roomId"`
-	Type         RoomType              `json:"roomType"`
+	ID           int                   `json:"ID"`
+	Type         RoomType              `json:"type"`
 	Participants []ChatroomParticipant `json:"participants"`
 }
 
 type ChatroomMessage struct {
-	ID           int                 `json:"id"`
-	RoomID       int                 `json:"roomId"`
+	ID           int                 `json:"ID"`
+	RoomID       int                 `json:"roomID"`
 	Content      string              `json:"content"`
 	Type         MessageType         `json:"type"`
 	FileLocation string              `json:"fileLocation"`
@@ -19,7 +21,7 @@ type ChatroomMessage struct {
 }
 
 type ChatroomParticipant struct {
-	Id           int    `json:"id"`
+	ID           int    `json:"ID"`
 	Name         string `json:"name"`
-	ProfileImage string `json:"profile_image"`
+	ProfileImage string `json:"profileImage"`
 }
