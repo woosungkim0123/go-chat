@@ -7,7 +7,7 @@ import (
 	"go.etcd.io/bbolt"
 	"log"
 	"ws/internal/chatroom/ch_domain"
-	"ws/internal/chatroom/dto"
+	"ws/internal/chatroom/ch_dto"
 	"ws/internal/common/apperror"
 	"ws/internal/common/util"
 )
@@ -19,11 +19,11 @@ type ChatroomRepository struct {
 }
 
 func NewChatroomRepository(db *bbolt.DB) *ChatroomRepository {
-	return &ChatroomRepository{db: db, chatroom: "chatroom", chatroomMessage: "chatroom_message"}
+	return &ChatroomRepository{db: db, chatroom: "chatroom", chatroomMessage: "chatroomMessage"}
 }
 
-func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []dto.ChatroomWithLastMessageDTO {
-	var chatroomListDto []dto.ChatroomWithLastMessageDTO
+func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []ch_dto.ChatroomWithLastMessageDTO {
+	var chatroomListDto []ch_dto.ChatroomWithLastMessageDTO
 
 	err := r.db.View(func(tx *bbolt.Tx) error {
 		b, bucketError := util.GetBucket(tx, r.chatroom)
@@ -39,7 +39,7 @@ func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []dto.ChatroomW
 
 			if (room.Type == ch_domain.Single || room.Type == ch_domain.Mine) && r.containsParticipant(room.Participants, userID) {
 				lastMsg := r.getLastMessage(room.ID)
-				chatroomDto := dto.NewChatroomWithLastMessageDTO(&room, lastMsg)
+				chatroomDto := ch_dto.NewChatroomWithLastMessageDTO(&room, lastMsg)
 				chatroomListDto = append(chatroomListDto, *chatroomDto)
 			}
 
@@ -140,7 +140,7 @@ func (r *ChatroomRepository) GetChatroomMessages(chatroomID int) ([]ch_domain.Ch
 	var messages []ch_domain.ChatroomMessage
 
 	dbError := r.db.View(func(tx *bbolt.Tx) error {
-		b, bucketError := util.GetBucket(tx, r.chatroom)
+		b, bucketError := util.GetBucket(tx, r.chatroomMessage)
 		if bucketError != nil {
 			return bucketError
 		}
@@ -174,7 +174,7 @@ func (r *ChatroomRepository) containsParticipant(participants []ch_domain.Chatro
 	return false
 }
 
-func (r *ChatroomRepository) SaveMessage(chatroomMessage ch_domain.ChatroomMessage) *apperror.CustomError {
+func (r *ChatroomRepository) SaveMessage(chatroomMessage *ch_domain.ChatroomMessage) (*ch_domain.ChatroomMessage, *apperror.CustomError) {
 	dbError := r.db.Update(func(tx *bbolt.Tx) error {
 		b, bucketError := util.GetBucket(tx, r.chatroomMessage)
 		if bucketError != nil {
@@ -205,10 +205,10 @@ func (r *ChatroomRepository) SaveMessage(chatroomMessage ch_domain.ChatroomMessa
 
 	if dbError != nil {
 		log.Printf("failed to add chatroom message: %v", dbError)
-		return &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
+		return nil, &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
 	}
 
-	return nil
+	return chatroomMessage, nil
 }
 
 func (r *ChatroomRepository) getLastMessage(roomID int) *ch_domain.ChatroomMessage {

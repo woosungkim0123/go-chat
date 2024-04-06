@@ -133,11 +133,13 @@ func (s *WebSocketService) ListenToWsChannel() {
 				Time:         util.GetCurrentDate(),
 			}
 
-			savedError := s.chatService.SaveMessage(chatroomMessage)
+			savedError, messageDto := s.chatService.SaveMessage(&chatroomMessage)
 			if savedError != nil {
 				log.Println("Error saving message to database:", savedError)
 				continue
 			}
+			// TODO messageDto를 이용하여 response를 만들어야 합니다.
+			fmt.Printf("messageDto: %v\n", messageDto)
 
 			response.Action = "broadcast"
 			response.User = ws_dto.UserSocketDto{ID: accessUser.ID, Name: accessUser.Name}

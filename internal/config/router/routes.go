@@ -40,7 +40,9 @@ func (r *Router) setAuthRouter(url string) {
 func (r *Router) setChatRouter(url string) {
 	ch := r.Container.ChatroomHandler
 	r.mux.Get(url, middleware.AuthMiddleware(http.HandlerFunc(ch.GetChatList)))
-	r.mux.Get(url+"/single", middleware.AuthMiddleware(http.HandlerFunc(ch.GetSingleChatroom)))
+	r.mux.Get(url+"/mine", middleware.AuthMiddleware(http.HandlerFunc(ch.GetMineChatroom)))
+	r.mux.Get(url+"/single/:userID", middleware.AuthMiddleware(http.HandlerFunc(ch.GetSingleChatroom)))
+	r.mux.Post(url+"/mine", middleware.AuthMiddleware(http.HandlerFunc(ch.AddMineChatroomMessage)))
 }
 
 func (r *Router) setWebSocketRouter(url string) {

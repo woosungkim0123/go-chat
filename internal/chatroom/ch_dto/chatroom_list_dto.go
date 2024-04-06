@@ -1,4 +1,4 @@
-package dto
+package ch_dto
 
 import (
 	"time"

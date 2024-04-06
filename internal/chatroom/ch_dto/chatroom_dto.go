@@ -1,8 +1,8 @@
-package dto
+package ch_dto
 
 import (
-	"time"
 	"ws/internal/chatroom/ch_domain"
+	"ws/internal/common/util"
 )
 
 type ChatroomDTO struct {
@@ -25,7 +25,23 @@ type ChatroomMessageDTO struct {
 	Type         ch_domain.MessageType  `json:"type"`
 	FileLocation string                 `json:"fileLocation"`
 	Participant  ChatroomParticipantDTO `json:"participant"`
-	Time         time.Time              `json:"time"`
+	Time         string                 `json:"time"`
+}
+
+func NewChatroomMessageDto(message *ch_domain.ChatroomMessage) *ChatroomMessageDTO {
+	return &ChatroomMessageDTO{
+		ID:           message.ID,
+		RoomID:       message.RoomID,
+		Content:      message.Content,
+		Type:         message.Type,
+		FileLocation: message.FileLocation,
+		Participant: ChatroomParticipantDTO{
+			ID:           message.Participant.ID,
+			Name:         message.Participant.Name,
+			ProfileImage: message.Participant.ProfileImage,
+		},
+		Time: util.ConvertDateToString(message.Time),
+	}
 }
 
 func NewChatroomDTO(chatroom *ch_domain.Chatroom, chatroomMessages []ch_domain.ChatroomMessage) *ChatroomDTO {
@@ -43,19 +59,7 @@ func NewChatroomDTO(chatroom *ch_domain.Chatroom, chatroomMessages []ch_domain.C
 	}
 
 	for _, message := range chatroomMessages {
-		dto.Messages = append(dto.Messages, ChatroomMessageDTO{
-			ID:           message.ID,
-			RoomID:       message.RoomID,
-			Content:      message.Content,
-			Type:         message.Type,
-			FileLocation: message.FileLocation,
-			Participant: ChatroomParticipantDTO{
-				ID:           message.Participant.ID,
-				Name:         message.Participant.Name,
-				ProfileImage: message.Participant.ProfileImage,
-			},
-			Time: message.Time,
-		})
+		dto.Messages = append(dto.Messages, *NewChatroomMessageDto(&message))
 	}
 
 	return dto

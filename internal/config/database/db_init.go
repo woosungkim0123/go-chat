@@ -35,6 +35,11 @@ func (i *Initializer) initializeSchema() {
 			return fmt.Errorf("delete user bucket: %s", err)
 		}
 
+		err = tx.DeleteBucket([]byte("chatroomMessage"))
+		if err != nil && !errors.Is(err, bbolt.ErrBucketNotFound) {
+			return fmt.Errorf("delete chatroomMessage bucket: %s", err)
+		}
+
 		_, err = tx.CreateBucketIfNotExists([]byte("chatroom"))
 		if err != nil {
 			return fmt.Errorf("create chatroom bucket: %s", err)
@@ -43,6 +48,11 @@ func (i *Initializer) initializeSchema() {
 		_, err = tx.CreateBucketIfNotExists([]byte("user"))
 		if err != nil {
 			return fmt.Errorf("create user bucket: %s", err)
+		}
+
+		_, err = tx.CreateBucketIfNotExists([]byte("chatroomMessage"))
+		if err != nil {
+			return fmt.Errorf("create chatroomMessage bucket: %s", err)
 		}
 
 		return nil
