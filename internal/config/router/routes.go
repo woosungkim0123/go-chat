@@ -18,7 +18,9 @@ func NewRouter(container *di.Container) *Router {
 }
 
 func (r *Router) Routes() http.Handler {
+
 	r.setWebRouter("/")
+	r.setFileRouter("/static/")
 	r.setAuthRouter("/auth")
 	r.setChatRouter("/chatroom")
 	r.setWebSocketRouter("/ws")
@@ -28,6 +30,10 @@ func (r *Router) Routes() http.Handler {
 func (r *Router) setWebRouter(url string) {
 	wh := r.Container.WebHandler
 	r.mux.Get(url, middleware.AuthMiddleware(http.HandlerFunc(wh.Home)))
+}
+
+func (r *Router) setFileRouter(url string) {
+	r.mux.Get(url, http.StripPrefix(url, http.FileServer(http.Dir("public"))))
 }
 
 func (r *Router) setAuthRouter(url string) {
