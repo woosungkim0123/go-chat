@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strconv"
 )
@@ -22,4 +23,10 @@ func ConvertToInt(value any) (int, error) {
 		// 그 외 타입은 처리할 수 없음
 		return 0, fmt.Errorf("unsupported type: %T", value)
 	}
+}
+
+func ConvertIntToByte(value int) []byte {
+	idKey := make([]byte, 8)
+	binary.BigEndian.PutUint64(idKey, uint64(value))
+	return idKey
 }

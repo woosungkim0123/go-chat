@@ -9,6 +9,7 @@ import (
 	"ws/internal/chatroom/ch_domain"
 	"ws/internal/chatroom/ch_dto"
 	"ws/internal/common/apperror"
+	"ws/internal/common/converter"
 	"ws/internal/common/util"
 )
 
@@ -117,9 +118,8 @@ func (r *ChatroomRepository) AddChatroom(chatroom *ch_domain.Chatroom) *apperror
 			log.Printf("failed to marshal chatroom data: %v", jsonError)
 			return jsonError
 		}
-
-		idKey := fmt.Sprintf("%d", chatroom.ID)
-		if err := b.Put([]byte(idKey), chatroomData); err != nil {
+		idKey := converter.ConvertIntToByte(chatroom.ID)
+		if err := b.Put(idKey, chatroomData); err != nil {
 			log.Printf("failed to put chatroom: %v", err)
 			return err
 		}
@@ -165,15 +165,6 @@ func (r *ChatroomRepository) GetChatroomMessages(chatroomID int) ([]ch_domain.Ch
 	return messages, nil
 }
 
-func (r *ChatroomRepository) containsParticipant(participants []ch_domain.ChatroomParticipant, userID int) bool {
-	for _, p := range participants {
-		if p.ID == userID {
-			return true
-		}
-	}
-	return false
-}
-
 func (r *ChatroomRepository) SaveMessage(chatroomMessage *ch_domain.ChatroomMessage) (*ch_domain.ChatroomMessage, *apperror.CustomError) {
 	dbError := r.db.Update(func(tx *bbolt.Tx) error {
 		b, bucketError := util.GetBucket(tx, r.chatroomMessage)
@@ -194,8 +185,8 @@ func (r *ChatroomRepository) SaveMessage(chatroomMessage *ch_domain.ChatroomMess
 			return jsonError
 		}
 
-		idKey := fmt.Sprintf("%d", chatroomMessage.ID)
-		if err := b.Put([]byte(idKey), chatroomMessageData); err != nil {
+		idKey := converter.ConvertIntToByte(chatroomMessage.ID)
+		if err := b.Put(idKey, chatroomMessageData); err != nil {
 			log.Printf("failed to put chatroom message: %v", err)
 			return err
 		}
@@ -211,6 +202,16 @@ func (r *ChatroomRepository) SaveMessage(chatroomMessage *ch_domain.ChatroomMess
 	return chatroomMessage, nil
 }
 
+func (r *ChatroomRepository) containsParticipant(participants []ch_domain.ChatroomParticipant, userID int) bool {
+	for _, p := range participants {
+		if p.ID == userID {
+			return true
+		}
+	}
+	return false
+}
+
+// TODO 수정필요
 func (r *ChatroomRepository) getLastMessage(roomID int) *ch_domain.ChatroomMessage {
 	var lastMessage *ch_domain.ChatroomMessage
 
