@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"ws/internal/auth/service"
 	"ws/internal/chatroom/ch_domain"
+	"ws/internal/chatroom/ch_dto"
 	"ws/internal/chatroom/ch_service"
 	"ws/internal/common/util"
 	"ws/internal/web_socket/ws_domain"
@@ -44,6 +45,7 @@ func (s *WebSocketService) ListenForWebSocket(conn *ws_domain.WebSocketConnectio
 		if err != nil {
 			continue
 		}
+		request.Conn = conn
 		s.wsChan <- request
 	}
 }
@@ -81,10 +83,11 @@ func (s *WebSocketService) ListenToWsChannel() {
 			log.Printf("User %d joined room %d", userID, roomID)
 
 			response.Action = "join"
-			response.User = ws_dto.UserSocketDto{ID: accessUser.ID, Name: accessUser.Name, ProfileImage: accessUser.ProfileImage}
-			response.Time = util.GetCurrentDateWithFormat()
-			response.Message = fmt.Sprintf("User %d joined room %d", userID, roomID)
-			s.broadcastToRoom(request, response)
+			// TODO DATA 필요, MESSAGE도 넣자
+			//response.User = ws_dto.UserSocketDto{ID: accessUser.ID, Name: accessUser.Name, ProfileImage: accessUser.ProfileImage}
+			//response.Time = util.GetCurrentDateWithFormat()
+			//response.Message = fmt.Sprintf("User %d joined room %d", userID, roomID)
+			s.broadcastToRoom(&request, &response)
 
 		case "left":
 			roomID, userID, err := s.convertRoomIDAndUserID(request.RoomID, request.UserID)
@@ -107,9 +110,11 @@ func (s *WebSocketService) ListenToWsChannel() {
 			delete(chatroomSession.Participants, userID)
 
 			response.Action = "left"
-			response.User = ws_dto.UserSocketDto{ID: leftUser.ID, Name: leftUser.Name}
-			response.Message = fmt.Sprintf("User %d left room %d", userID, roomID)
-			s.broadcastToRoom(request, response)
+			// TODO DATA 필요
+			fmt.Print("leftUser: ", leftUser)
+			//response.User = ws_dto.UserSocketDto{ID: leftUser.ID, Name: leftUser.Name}
+			//response.Message = fmt.Sprintf("User %d left room %d", userID, roomID)
+			s.broadcastToRoom(&request, &response)
 
 		case "broadcast":
 			roomID, userID, err := s.convertRoomIDAndUserID(request.RoomID, request.UserID)
@@ -133,7 +138,7 @@ func (s *WebSocketService) ListenToWsChannel() {
 				Time:         util.GetCurrentDate(),
 			}
 
-			savedError, messageDto := s.chatService.SaveMessage(&chatroomMessage)
+			messageDto, savedError := s.chatService.SaveMessage(&chatroomMessage)
 			if savedError != nil {
 				log.Println("Error saving message to database:", savedError)
 				continue
@@ -142,15 +147,14 @@ func (s *WebSocketService) ListenToWsChannel() {
 			fmt.Printf("messageDto: %v\n", messageDto)
 
 			response.Action = "broadcast"
-			response.User = ws_dto.UserSocketDto{ID: accessUser.ID, Name: accessUser.Name}
-			response.Time = util.ConvertDateToString(chatroomMessage.Time)
-			response.Message = request.Content
-			s.broadcastToRoom(request, response)
+			response.Data = ch_dto.NewChatroomMessageDto(&chatroomMessage)
+
+			s.broadcastToRoom(&request, &response)
 		}
 	}
 }
 
-func (s *WebSocketService) broadcastToRoom(request ws_dto.WsJsonRequest, response ws_dto.WsJsonResponse) {
+func (s *WebSocketService) broadcastToRoom(request *ws_dto.WsJsonRequest, response *ws_dto.WsJsonResponse) {
 	roomID, err := s.convertStringToInt(request.RoomID)
 	if err != nil {
 		return

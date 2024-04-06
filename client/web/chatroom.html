@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width">
     <title>Home Page</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        .profile-image { width: 40px; height: 40px; border-radius: 15px; border: solid 1px #ccc; margin-right: 10px; }
+        .profile-image2 { width: 40px; height: 40px; border-radius: 15px; border: solid 1px #ccc; margin-left: 10px; }
+        .mr-5 { margin-right: 5px; }
+    </style>
 </head>
 <body>
 {{template "header"}}
@@ -16,29 +21,26 @@
             <h3 class="mb-3">채팅</h3>
             <ul id="chatList" class="list-group mb-3 border" style="height: 400px; overflow-y: auto;">
                 {{range .Messages}}
-                {{if eq .Participant.ID $.AccessUser.ID}}
                 <li class="list-group-item">
-                    <div class="d-flex w-100 justify-content-start flex-column">
-                        <small class="text-muted">{{.Time}}</small>
-                        <small class="text-muted">{{.Participant.Name}}</small>
-                        <div class="mb-1">{{.Content}}</div>
+                    <div class="d-flex {{if eq .Participant.ID $.AccessUser.ID}}justify-content-start{{else}}justify-content-end{{end}} align-items-center">
+                        {{if eq .Participant.ID $.AccessUser.ID}}
+                        <img src="{{.Participant.ProfileImage}}" class="rounded-circle profile-image" />
+                        {{end}}
+                        <div class="d-flex flex-column {{if eq .Participant.ID $.AccessUser.ID}}align-items-start{{else}}align-items-end{{end}}">
+                            <div><small class="text-muted mr-5">{{.Participant.Name}}</small><small class="text-muted">{{.Time}}</small></div>
+                            <div class="mb-1">{{.Content}}</div>
+                        </div>
+                        {{if ne .Participant.ID $.AccessUser.ID}}
+                        <img src="{{.Participant.ProfileImage}}" class="rounded-circle profile-image2" />
+                        {{end}}
                     </div>
                 </li>
-                {{else}}
-                <li class="list-group-item">
-                    <div class="d-flex w-100 justify-content-end flex-column align-items-end">
-                        <small class="text-muted">{{.Time}}</small>
-                        <small class="text-muted">{{.Participant.Name}}</small>
-                        <div class="mb-1">{{.Content}}</div>
-                    </div>
-                </li>
-                {{end}}
                 {{end}}
             </ul>
             <!-- 채팅 입력 -->
             <div class="input-group mb-3">
-                <input id="roomId" type="hidden" name="room_id" value="{{.ID}}" />
-                <input id="userId" type="hidden" name="user_id" value="{{.AccessUser.ID}}" />
+                <input id="roomID" type="hidden" name="roomID" value="{{.ID}}" />
+                <input id="userID" type="hidden" name="userID" value="{{.AccessUser.ID}}" />
                 <textarea class="form-control" id="messageInput" name="message" rows="1" placeholder="메시지를 입력하세요..."></textarea>
                 <button id="sendBtn" class="btn btn-primary">보내기</button>
             </div>
@@ -66,43 +68,71 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
 let socket;
-const roomId = document.getElementById("roomId").value;
-let userId = document.getElementById("userId").value;
+const roomID = document.getElementById("roomID").value;
+let userID = document.getElementById("userID").value;
 
 const messageInput = document.getElementById("messageInput");
-
 const makeMessageDom = (data) => {
+    console.log(data);
     let ul = document.getElementById("chatList");
     let li = document.createElement("li");
     li.classList.add("list-group-item");
 
-    let div = document.createElement("div");
-    div.classList.add("d-flex", "w-100", "flex-column", "mb-1");
-    console.log(data.user.id)
-    console.log(userId)
-    // 메시지 보낸 사람이 현재 접속한 사용자인 경우
-    if (data.user.id == userId) {
-        div.classList.add("justify-content-start");
+    // 현재 사용자가 메시지를 보냈는지 판단
+    let isCurrentUser = data.participant.ID.toString() === userID;
+    console.log(isCurrentUser)
+
+    let divFlex = document.createElement("div");
+    divFlex.classList.add("d-flex", "align-items-center");
+    // 현재 사용자의 메시지일 경우 왼쪽 정렬, 다른 사용자의 메시지일 경우 오른쪽 정렬
+    if (!isCurrentUser) {
+        divFlex.classList.add("justify-content-end");
     } else {
-        div.classList.add("justify-content-end", "align-items-end");
+        divFlex.classList.add("justify-content-start");
     }
+
+    let img = document.createElement("img");
+    img.src = data.participant.profileImage;
+    img.classList.add("rounded-circle");
+    // 현재 사용자와 다른 사용자의 프로필 이미지 스타일 조정
+    img.classList.add(isCurrentUser ? "profile-image" : "profile-image2");
+
+    let divFlexColumn = document.createElement("div");
+    divFlexColumn.classList.add("d-flex", "w-100", "flex-column");
+    if (!isCurrentUser) {
+        divFlexColumn.classList.add("align-items-end");
+    }
+
+    let divNameTime = document.createElement("div");
+    let smallName = document.createElement("small");
+    smallName.classList.add("text-muted", "mr-5");
+    smallName.textContent = data.participant.name;
 
     let smallTime = document.createElement("small");
     smallTime.classList.add("text-muted");
-    smallTime.textContent = data.time; // 메시지 보낸 시간 설정
+    smallTime.textContent = data.time;
 
-    let smallName = document.createElement("small");
-    smallName.classList.add("text-muted");
-    smallName.textContent = data.user.name; // 메시지 보낸 사람의 이름 설정
+    divNameTime.appendChild(smallName);
+    divNameTime.appendChild(smallTime);
 
     let messageDiv = document.createElement("div");
-    messageDiv.textContent = data.message; // 메시지 내용 설정
+    messageDiv.classList.add("mb-1");
+    messageDiv.textContent = data.content;
 
-    // 요소들을 DOM에 추가
-    div.appendChild(smallTime);
-    div.appendChild(smallName);
-    div.appendChild(messageDiv);
-    li.appendChild(div);
+    divFlexColumn.appendChild(divNameTime);
+    divFlexColumn.appendChild(messageDiv);
+
+    // 현재 사용자의 메시지일 경우 프로필 이미지를 메시지 왼쪽에 배치
+    if (isCurrentUser) {
+        divFlex.appendChild(img);
+    }
+    divFlex.appendChild(divFlexColumn);
+    // 다른 사용자의 메시지일 경우 프로필 이미지를 메시지 오른쪽에 배치
+    if (!isCurrentUser) {
+        divFlex.appendChild(img);
+    }
+
+    li.appendChild(divFlex);
     ul.appendChild(li);
 };
 
@@ -112,12 +142,12 @@ const scrollToBottom = () => {
 }
 
 const sendMessage = () => {
-    socket.send(JSON.stringify({action: "broadcast", userId: userId, roomId: roomId, message: messageInput.value}));
+    socket.send(JSON.stringify({action: "broadcast", userID: userID, roomID: roomID, content: messageInput.value, type: "text"}));
     messageInput.value = "";
 }
 
 window.onbeforeunload = () => {
-    socket.send(JSON.stringify({action: "left", userId: userId, roomId: roomId}));
+    socket.send(JSON.stringify({action: "left", userID: userID, roomID: roomID}));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -127,20 +157,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.onopen = () => {
         console.log('Connected to the server');
-        socket.send(JSON.stringify({action: "join", userId: userId, roomId: roomId}));
+        socket.send(JSON.stringify({action: "join", userID: userID, roomID: roomID}));
     };
 
     socket.onmessage = msg => {
-        let data = JSON.parse(msg.data);
-        console.log(data)
-
-        switch (data.action) {
+        let result = JSON.parse(msg.data);
+        // TODO ID로 수정해야함
+        switch (result.action) {
             case "join":
-                console.log("User: " + data.user.name + " has joined the chatroom");
+                console.log("User: " + result.data.participant.name + " has joined the chatroom");
                 break;
 
             case "broadcast":
-                makeMessageDom(data);
+                makeMessageDom(result.data);
                 scrollToBottom();
                 break;
         }

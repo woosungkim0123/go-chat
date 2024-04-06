@@ -2,15 +2,13 @@ package ws_dto
 
 import (
 	"ws/internal/chatroom/ch_domain"
+	"ws/internal/chatroom/ch_dto"
 	"ws/internal/web_socket/ws_domain"
 )
 
 type WsJsonResponse struct {
-	Action      string        `json:"action"`
-	User        UserSocketDto `json:"user"`
-	Message     string        `json:"message"`
-	MessageType string        `json:"message_type"`
-	Time        string        `json:"time"`
+	Action string                     `json:"action"`
+	Data   *ch_dto.ChatroomMessageDTO `json:"data"`
 }
 
 type WsJsonRequest struct {

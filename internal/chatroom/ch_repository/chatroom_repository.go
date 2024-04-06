@@ -81,7 +81,7 @@ func (r *ChatroomRepository) GetMineChatroom(userID int) (*ch_domain.Chatroom, *
 		})
 
 		if chatroomResult == nil {
-			return util.HandleError(fmt.Sprintf("failed to find mine chatroom with user id: %d", userID), apperror.NotFoundMineChatroom)
+			return util.HandleError(fmt.Sprintf("failed to find mine chatroom with user id: %d", userID), apperror.NotFoundChatroom)
 		} else if errors.Is(chatroomResult, FoundChatroomAndStopIterator) {
 			return nil // 채팅방을 찾았으므로, 에러 없음
 		} else {
@@ -90,13 +90,56 @@ func (r *ChatroomRepository) GetMineChatroom(userID int) (*ch_domain.Chatroom, *
 	})
 
 	if dbError != nil {
-		if dbError.Error() == string(apperror.NotFoundMineChatroom) {
-			return nil, &apperror.CustomError{Code: apperror.NotFoundMineChatroom, Message: "자신의 채팅방을 찾을 수 없습니다."}
+		if dbError.Error() == string(apperror.NotFoundChatroom) {
+			return nil, &apperror.CustomError{Code: apperror.NotFoundChatroom, Message: "자신의 채팅방을 찾을 수 없습니다."}
 		}
 		return nil, &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
 	}
 
 	return mineChatroom, nil
+}
+
+func (r *ChatroomRepository) GetSingleChatroom(accessUserID, opponentUserID int) (*ch_domain.Chatroom, *apperror.CustomError) {
+	var singleChatroom *ch_domain.Chatroom
+	var FoundChatroomAndStopIterator = errors.New("found chatroom")
+
+	dbError := r.db.View(func(tx *bbolt.Tx) error {
+		b, bucketError := util.GetBucket(tx, r.chatroom)
+		if bucketError != nil {
+			return bucketError
+		}
+
+		chatroomResult := b.ForEach(func(k, v []byte) error {
+			var room ch_domain.Chatroom
+			if jsonError := json.Unmarshal(v, &room); jsonError != nil {
+				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror.FailJsonUnmarshal)
+			}
+
+			if room.Type == ch_domain.Single && r.containsParticipant(room.Participants, accessUserID) && r.containsParticipant(room.Participants, opponentUserID) {
+				singleChatroom = &room
+				return FoundChatroomAndStopIterator
+			}
+
+			return nil
+		})
+
+		if chatroomResult == nil {
+			return util.HandleError(fmt.Sprintf("failed to find single chatroom with user id: %d", accessUserID), apperror.NotFoundChatroom)
+		} else if errors.Is(chatroomResult, FoundChatroomAndStopIterator) {
+			return nil // 채팅방을 찾았으므로, 에러 없음
+		} else {
+			return chatroomResult // 다른 에러 처리
+		}
+	})
+
+	if dbError != nil {
+		if dbError.Error() == string(apperror.NotFoundChatroom) {
+			return nil, &apperror.CustomError{Code: apperror.NotFoundChatroom, Message: "상대방과의 채팅방을 찾을 수 없습니다."}
+		}
+		return nil, &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
+	}
+
+	return singleChatroom, nil
 }
 
 func (r *ChatroomRepository) AddChatroom(chatroom *ch_domain.Chatroom) *apperror.CustomError {

@@ -33,38 +33,23 @@ func (s *ChatroomService) GetMineChatroom(accessUser *udomain.User) (*ch_dto.Cha
 	return ch_dto.NewChatroomDTO(chatroom, chatroomMessages), nil
 }
 
-func (s *ChatroomService) GetChatroomByUserID(accessUser *udomain.User, opponentUserID int) (*ch_dto.ChatroomDTO, *apperror.CustomError) {
+func (s *ChatroomService) GetSingleChatroom(accessUser *udomain.User, opponentUserID int) (*ch_dto.ChatroomDTO, *apperror.CustomError) {
 	if s.isAccessMineChatroom(accessUser, opponentUserID) {
 		return nil, &apperror.CustomError{Code: apperror.WrongAccessMineChatroom, Message: "잘못된 접근입니다."}
 	}
+	opponentUser, userError := s.findUserByUserID(opponentUserID)
+	if userError != nil {
+		return nil, userError
+	}
+	chatroom, err := s.getSingleChatroom(accessUser, opponentUser)
+	if err != nil {
+		return nil, err
+	}
 
-	// 값이 있으면 string을 int로 변환하는걸로, 그리고 값이 없으면 그냥 나둠
-	/*
-		if _, err := s.authService.GetUserProfile(otherUserID); err != nil {
-			fmt.Errorf("상대방 유저 정보를 가져오는데 실패했습니다: %v", err)
-		}
-		fmt.Print(otherUserID)
-		otherUser, err2 := s.authService.GetUserProfile(otherUserID)
-		if err2 != nil {
-			fmt.Errorf("상대방 유저 정보를 가져오는데 실패했습니다.")
-		}
-		fmt.Print(otherUser)
-	*/
-	//
-	//// 값이 없거나 유저가 없거나 잘못되면 그냥 없는걸로 간주하고 자신만있는 채팅방
-	//s.repository.findChatroomByUserID(accessUserID, opponentUserID)
-	//
-	//room := findChatRoom(accessUserId, otherUserId)
-	//if room != nil {
-	//	return convertChatroomDto(room, accessUserId)
-	//}
-	//
-	//room = createChatRoom(accessUserId, otherUserId)
-	//
-	//chatroomDto := convertChatroomDto(room, accessUserId)
-	//
-	//return chatroomDto
-	return nil, nil
+	var chatroomMessages []ch_domain.ChatroomMessage
+	chatroomMessages, err = s.getChatroomMessages(chatroom.ID)
+
+	return ch_dto.NewChatroomDTO(chatroom, chatroomMessages), nil
 }
 
 func (s *ChatroomService) SaveMessage(chatroomMessage *ch_domain.ChatroomMessage) (*ch_dto.ChatroomMessageDTO, *apperror.CustomError) {
@@ -82,9 +67,12 @@ func (s *ChatroomService) isAccessMineChatroom(accessUser *udomain.User, opponen
 
 func (s *ChatroomService) getMyChatroom(user *udomain.User) (*ch_domain.Chatroom, *apperror.CustomError) {
 	chatroom, err := s.chatroomRepository.GetMineChatroom(user.ID)
+	users := make([]udomain.User, 0)
+	users = append(users, *user)
+
 	if err != nil {
-		if err.Code == apperror.NotFoundMineChatroom {
-			chatroom, err = s.createMineChatroom(user)
+		if err.Code == apperror.NotFoundChatroom {
+			chatroom, err = s.createChatroom(ch_domain.Mine, users)
 			if err != nil {
 				log.Printf("내 채팅방 생성에 실패했습니다: %v", err)
 				return nil, err
@@ -97,21 +85,35 @@ func (s *ChatroomService) getMyChatroom(user *udomain.User) (*ch_domain.Chatroom
 	return chatroom, nil
 }
 
-func (s *ChatroomService) createMineChatroom(user *udomain.User) (*ch_domain.Chatroom, *apperror.CustomError) {
-	chatroom := ch_domain.Chatroom{
-		Type: ch_domain.Mine,
-		Participants: []ch_domain.ChatroomParticipant{
-			{ID: user.ID, Name: user.Name, ProfileImage: user.ProfileImage},
-		},
-	}
+func (s *ChatroomService) getSingleChatroom(accessUser *udomain.User, opponentUser *udomain.User) (*ch_domain.Chatroom, *apperror.CustomError) {
+	chatroom, err := s.chatroomRepository.GetSingleChatroom(accessUser.ID, opponentUser.ID)
+	users := make([]udomain.User, 0)
+	users = append(users, *accessUser, *opponentUser)
 
-	err := s.chatroomRepository.AddChatroom(&chatroom)
+	if err != nil {
+		if err.Code == apperror.NotFoundChatroom {
+			chatroom, err = s.createChatroom(ch_domain.Single, users)
+			if err != nil {
+				log.Printf("상대방 채팅방 생성에 실패했습니다: %v", err)
+				return nil, err
+			}
+		} else {
+			log.Printf("상대방 채팅방을 가져오는데 실패했습니다: %v", err)
+			return nil, err
+		}
+	}
+	return chatroom, nil
+}
+
+func (s *ChatroomService) createChatroom(roomType ch_domain.RoomType, users []udomain.User) (*ch_domain.Chatroom, *apperror.CustomError) {
+	chatroom := ch_domain.NewChatroom(roomType, users)
+	err := s.chatroomRepository.AddChatroom(chatroom)
 	if err != nil {
 		log.Printf("채팅방을 생성하는데 실패했습니다: %v", err)
 		return nil, err
 	}
 
-	return &chatroom, nil
+	return chatroom, nil
 }
 
 func (s *ChatroomService) getChatroomMessages(chatroomID int) ([]ch_domain.ChatroomMessage, *apperror.CustomError) {
@@ -121,6 +123,15 @@ func (s *ChatroomService) getChatroomMessages(chatroomID int) ([]ch_domain.Chatr
 		return nil, err
 	}
 	return chatroomMessages, nil
+}
+
+func (s *ChatroomService) findUserByUserID(userID int) (*udomain.User, *apperror.CustomError) {
+	user, err := s.authService.FindUserByID(userID)
+	if err != nil {
+		log.Printf("유저를 찾는데 실패했습니다. userID: %d, %v", userID, err)
+		return nil, err
+	}
+	return user, nil
 }
 
 //func (s *Service) SaveMessage(roomId int, chatroomMessage domain.ChatroomMessage) {

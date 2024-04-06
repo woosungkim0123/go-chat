@@ -12,5 +12,5 @@ const (
 	NotFoundUserByID      ErrorCode = "NotFoundUserByID"
 
 	WrongAccessMineChatroom ErrorCode = "WrongAccessMineChatroom"
-	NotFoundMineChatroom    ErrorCode = "NotFoundMineChatroom"
+	NotFoundChatroom        ErrorCode = "NotFoundChatroom"
 )

@@ -63,7 +63,7 @@ func (h *ChatroomHandler) GetSingleChatroom(w http.ResponseWriter, r *http.Reque
 	opponentUserID := r.URL.Query().Get(":userID")
 
 	// TODO error handler -> 404나 500에러 페이지로
-	chatroomDTO, err := h.chatroomService.GetChatroomByUserID(accessUser, h.convertStringToInt(opponentUserID))
+	chatroomDTO, err := h.chatroomService.GetSingleChatroom(accessUser, h.convertStringToInt(opponentUserID))
 	if err != nil {
 		if err.Code == apperror.WrongAccessMineChatroom {
 			http.Redirect(w, r, "/chatroom/mine", http.StatusSeeOther)
