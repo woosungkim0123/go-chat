@@ -67,8 +67,8 @@ func (i *Initializer) initializeSchema() {
 func (i *Initializer) initializeData() {
 	users := []domain.User{
 		{Name: "홍길동", LoginID: "test1", ProfileImage: "/static/profile/hong.png"},
-		{Name: "김철수", LoginID: "test2", ProfileImage: "path/to/bob.jpg"},
-		{Name: "이영희", LoginID: "test3", ProfileImage: "path/to/bob.jpg"},
+		{Name: "김철수", LoginID: "test2", ProfileImage: "/static/profile/chul.png"},
+		{Name: "이영희", LoginID: "test3", ProfileImage: "/static/profile/young.png"},
 	}
 
 	err := i.db.Update(func(tx *bbolt.Tx) error {
