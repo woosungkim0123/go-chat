@@ -162,10 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.onmessage = msg => {
         let result = JSON.parse(msg.data);
-        // TODO ID로 수정해야함
+
         switch (result.action) {
             case "join":
-                console.log("User: " + result.data.participant.name + " has joined the chatroom");
+                console.log(result.message)
                 break;
 
             case "broadcast":

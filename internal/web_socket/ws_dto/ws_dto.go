@@ -7,8 +7,9 @@ import (
 )
 
 type WsJsonResponse struct {
-	Action string                     `json:"action"`
-	Data   *ch_dto.ChatroomMessageDTO `json:"data"`
+	Action  string                     `json:"action"`
+	Message string                     `json:"message"`
+	Data    *ch_dto.ChatroomMessageDTO `json:"data,omitempty"`
 }
 
 type WsJsonRequest struct {

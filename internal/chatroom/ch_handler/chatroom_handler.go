@@ -80,7 +80,6 @@ func (h *ChatroomHandler) GetChatList(w http.ResponseWriter, r *http.Request) {
 	userId, _ := converter.ConvertToInt(uid)
 
 	fmt.Print(userId)
-
 	//chatListDto := h.service.GetChatListByUserId(userId)
 
 	template.RenderWithHeader(w, "chatlist", nil)

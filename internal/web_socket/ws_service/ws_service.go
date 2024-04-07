@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"ws/internal/auth/service"
 	"ws/internal/chatroom/ch_domain"
-	"ws/internal/chatroom/ch_dto"
 	"ws/internal/chatroom/ch_service"
 	"ws/internal/common/util"
 	"ws/internal/web_socket/ws_domain"
@@ -33,17 +32,15 @@ func NewWebSocketService(authService *service.AuthService, chatService *ch_servi
 func (s *WebSocketService) ListenForWebSocket(conn *ws_domain.WebSocketConnection) {
 	log.Println("Listening to websocket~~")
 
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Error = ", fmt.Sprintf("%v", r))
-		}
-	}()
-
 	var request ws_dto.WsJsonRequest
 	for {
 		err := conn.ReadJSON(&request)
 		if err != nil {
-			continue
+			log.Println("Error reading JSON:", err)
+			if err := conn.Close(); err != nil {
+				log.Println("Error closing connection:", err)
+			}
+			return
 		}
 		request.Conn = conn
 		s.wsChan <- request
@@ -83,10 +80,7 @@ func (s *WebSocketService) ListenToWsChannel() {
 			log.Printf("User %d joined room %d", userID, roomID)
 
 			response.Action = "join"
-			// TODO DATA 필요, MESSAGE도 넣자
-			//response.User = ws_dto.UserSocketDto{ID: accessUser.ID, Name: accessUser.Name, ProfileImage: accessUser.ProfileImage}
-			//response.Time = util.GetCurrentDateWithFormat()
-			//response.Message = fmt.Sprintf("User %d joined room %d", userID, roomID)
+			response.Message = fmt.Sprintf("User %d joined room %d", userID, roomID)
 			s.broadcastToRoom(&request, &response)
 
 		case "left":
@@ -95,7 +89,7 @@ func (s *WebSocketService) ListenToWsChannel() {
 				continue
 			}
 
-			leftUser, appError := s.authService.FindUserByID(userID)
+			_, appError := s.authService.FindUserByID(userID)
 			if appError != nil {
 				log.Printf("User not found: %d\n", userID)
 				continue
@@ -110,10 +104,8 @@ func (s *WebSocketService) ListenToWsChannel() {
 			delete(chatroomSession.Participants, userID)
 
 			response.Action = "left"
-			// TODO DATA 필요
-			fmt.Print("leftUser: ", leftUser)
-			//response.User = ws_dto.UserSocketDto{ID: leftUser.ID, Name: leftUser.Name}
-			//response.Message = fmt.Sprintf("User %d left room %d", userID, roomID)
+			response.Message = fmt.Sprintf("User %d left room %d", userID, roomID)
+
 			s.broadcastToRoom(&request, &response)
 
 		case "broadcast":
@@ -143,11 +135,10 @@ func (s *WebSocketService) ListenToWsChannel() {
 				log.Println("Error saving message to database:", savedError)
 				continue
 			}
-			// TODO messageDto를 이용하여 response를 만들어야 합니다.
-			fmt.Printf("messageDto: %v\n", messageDto)
 
 			response.Action = "broadcast"
-			response.Data = ch_dto.NewChatroomMessageDto(&chatroomMessage)
+			response.Message = fmt.Sprintf("User %d broadcasted message to room %d", userID, roomID)
+			response.Data = messageDto
 
 			s.broadcastToRoom(&request, &response)
 		}
