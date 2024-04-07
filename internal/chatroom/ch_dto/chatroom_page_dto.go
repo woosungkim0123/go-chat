@@ -23,3 +23,15 @@ func NewChatroomPageDTO(chatroomDTO *ChatroomDTO, accessUser *udomain.User) *Cha
 		AccessUser:   &dto.ProfileDto{ID: accessUser.ID, Name: accessUser.Name, ProfileImage: accessUser.ProfileImage},
 	}
 }
+
+type ChatroomListPageDTO struct {
+	ChatroomList []ChatroomWithLastMessageDTO `json:"chatroomList"`
+	AccessUser   *dto.ProfileDto              `json:"accessUser"`
+}
+
+func NewChatroomListPageDTO(chatroomList []ChatroomWithLastMessageDTO, accessUser *udomain.User) *ChatroomListPageDTO {
+	return &ChatroomListPageDTO{
+		ChatroomList: chatroomList,
+		AccessUser:   &dto.ProfileDto{ID: accessUser.ID, Name: accessUser.Name, ProfileImage: accessUser.ProfileImage},
+	}
+}

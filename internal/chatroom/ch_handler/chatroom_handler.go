@@ -1,7 +1,6 @@
 package ch_handler
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 	"ws/internal/chatroom/ch_dto"
 	"ws/internal/chatroom/ch_service"
 	"ws/internal/common/apperror"
-	"ws/internal/common/converter"
 	"ws/internal/common/response"
 	"ws/internal/common/template"
 	"ws/internal/common/util"
@@ -75,14 +73,15 @@ func (h *ChatroomHandler) GetSingleChatroom(w http.ResponseWriter, r *http.Reque
 	template.RenderWithHeader(w, "chatroom", ch_dto.NewChatroomPageDTO(chatroomDTO, accessUser))
 }
 
-func (h *ChatroomHandler) GetChatList(w http.ResponseWriter, r *http.Request) {
-	uid := r.Context().Value("uid")
-	userId, _ := converter.ConvertToInt(uid)
+func (h *ChatroomHandler) GetChatroomList(w http.ResponseWriter, r *http.Request) {
+	accessUser := h.getAccessUser(w, r)
 
-	fmt.Print(userId)
-	//chatListDto := h.service.GetChatListByUserId(userId)
+	chatListDto, err := h.chatroomService.GetChatroomListByUserID(accessUser.ID)
+	if err != nil {
+		// TODO error handler -> 404나 500에러 페이지로
+	}
 
-	template.RenderWithHeader(w, "chatlist", nil)
+	template.RenderWithHeader(w, "chatrooms", ch_dto.NewChatroomListPageDTO(chatListDto, accessUser))
 }
 
 func (h *ChatroomHandler) convertStringToInt(str string) int {

@@ -19,6 +19,15 @@ func NewChatroomService(chatroomRepository *ch_repository.ChatroomRepository, au
 	return &ChatroomService{chatroomRepository: chatroomRepository, authService: authService}
 }
 
+func (s *ChatroomService) GetChatroomListByUserID(userID int) ([]ch_dto.ChatroomWithLastMessageDTO, *apperror.CustomError) {
+	chatroomWithLastMessageDTO, err := s.chatroomRepository.GetChatroomListByUserID(userID)
+	if err != nil {
+		log.Printf("채팅방 리스트를 가져오는데 실패했습니다: %v", err)
+		return nil, err
+	}
+	return chatroomWithLastMessageDTO, nil
+}
+
 func (s *ChatroomService) GetMineChatroom(accessUser *udomain.User) (*ch_dto.ChatroomDTO, *apperror.CustomError) {
 	chatroom, err := s.getMyChatroom(accessUser)
 	if err != nil {
@@ -133,101 +142,3 @@ func (s *ChatroomService) findUserByUserID(userID int) (*udomain.User, *apperror
 	}
 	return user, nil
 }
-
-//func (s *Service) SaveMessage(roomId int, chatroomMessage domain.ChatroomMessage) {
-//	saveChatroom(roomId, chatroomMessage)
-//}
-//
-//func (s *Service) GetChatListByUserId(userID int) []dto2.ChatroomWithLastMessageDTO {
-//	chatroomListDto := s.repository.GetChatroomListByUserId(userID)
-//
-//	return chatroomListDto
-//}
-
-//func getUserChatList(userId int) []domain.Chatroom {
-//	allChatroom := chatRepository.GetAllChatroom()
-//	var userChatList []domain.Chatroom
-//	for _, room := range allChatroom {
-//		if contains(room.Participants, userId) {
-//			userChatList = append(userChatList, room)
-//		}
-//	}
-//	return userChatList
-//}
-//
-//func saveChatroom(roomId int, chatroomMessage domain.ChatroomMessage) {
-//	allChatroom := chatRepository.GetAllChatroom()
-//	for i, room := range allChatroom {
-//		if room.RoomID == roomId {
-//			allChatroom[i].Messages = append(room.Messages, chatroomMessage)
-//		}
-//	}
-//	jsonReader.Write("internal/store/json/chatroom.json", allChatroom)
-//}
-//
-//func findChatRoom(accessUserId, otherUserId int) *domain.Chatroom {
-//	allChatroom := chatRepository.GetAllChatroom()
-//	for _, room := range allChatroom {
-//		if contains(room.Participants, accessUserId) && contains(room.Participants, otherUserId) {
-//			return &room
-//		}
-//	}
-//	return nil
-//}
-//
-//func contains(users []auth.User, userID int) bool {
-//	for _, user := range users {
-//		if user.ID == userID {
-//			return true
-//		}
-//	}
-//	return false
-//}
-//
-//func createChatRoom(accessUserId, otherUserId int) *domain.Chatroom {
-//	accessUser := auth.FindUser(accessUserId)
-//	otherUser := auth.FindUser(otherUserId)
-//
-//	room := domain.Chatroom{
-//		RoomID:           len(chatRepository.GetAllChatroom()) + 1,
-//		domain2.RoomType: "Single",
-//		Participants: []auth.User{
-//			*accessUser,
-//			*otherUser,
-//		},
-//		Messages: []domain.ChatroomMessage{},
-//	}
-//	chatRepository.AddChatroom(room)
-//
-//	return &room
-//}
-//
-//func convertChatroomDto(room *domain.Chatroom, accessUserId int) *dto.ChatroomDto {
-//	var userDtos []dto.UserDto
-//	var accessUserDto dto.UserDto
-//
-//	for _, user := range room.Participants {
-//		if user.ID == accessUserId {
-//			accessUserDto = dto.UserDto{ID: user.ID, Name: user.Name}
-//		}
-//		userDtos = append(userDtos, dto.UserDto{ID: user.ID, Name: user.Name})
-//	}
-//
-//	var chatMessageListDto []dto.ChatMessageDto
-//
-//	for _, m := range room.Messages {
-//		chatMessageListDto = append(chatMessageListDto, dto.ChatMessageDto{
-//			Message: m.Message,
-//			User:    dto.UserDto{ID: m.User.ID, Name: m.User.Name},
-//			Time:    m.Time.Format("1/02 15:04:05"),
-//		})
-//	}
-//
-//	return &dto.ChatroomDto{
-//		RoomId:           room.RoomID,
-//		domain2.RoomType: room.RoomType,
-//		Participants:     userDtos,
-//		AccessUser:       accessUserDto,
-//		Messages:         chatMessageListDto,
-//	}
-//}

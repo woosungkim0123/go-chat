@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go.etcd.io/bbolt"
 	"log"
+	"sort"
 	"ws/internal/chatroom/ch_domain"
 	"ws/internal/chatroom/ch_dto"
 	"ws/internal/common/apperror"
@@ -23,10 +24,10 @@ func NewChatroomRepository(db *bbolt.DB) *ChatroomRepository {
 	return &ChatroomRepository{db: db, chatroom: "chatroom", chatroomMessage: "chatroomMessage"}
 }
 
-func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []ch_dto.ChatroomWithLastMessageDTO {
+func (r *ChatroomRepository) GetChatroomListByUserID(userID int) ([]ch_dto.ChatroomWithLastMessageDTO, *apperror.CustomError) {
 	var chatroomListDto []ch_dto.ChatroomWithLastMessageDTO
 
-	err := r.db.View(func(tx *bbolt.Tx) error {
+	dbError := r.db.View(func(tx *bbolt.Tx) error {
 		b, bucketError := util.GetBucket(tx, r.chatroom)
 		if bucketError != nil {
 			return bucketError
@@ -34,12 +35,16 @@ func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []ch_dto.Chatro
 
 		return b.ForEach(func(k, v []byte) error {
 			var room ch_domain.Chatroom
-			if err := json.Unmarshal(v, &room); err != nil {
-				return fmt.Errorf("failed to unmarshal chatroom: %v", err)
+			if jsonError := json.Unmarshal(v, &room); jsonError != nil {
+				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror.FailJsonUnmarshal)
 			}
 
-			if (room.Type == ch_domain.Single || room.Type == ch_domain.Mine) && r.containsParticipant(room.Participants, userID) {
-				lastMsg := r.getLastMessage(room.ID)
+			if room.Type != ch_domain.Open && r.containsParticipant(room.Participants, userID) {
+				lastMsg, err := r.getLastMessage(room.ID)
+				if err != nil {
+					log.Printf("Failed to get last message: %v", err)
+				}
+
 				chatroomDto := ch_dto.NewChatroomWithLastMessageDTO(&room, lastMsg)
 				chatroomListDto = append(chatroomListDto, *chatroomDto)
 			}
@@ -48,12 +53,30 @@ func (r *ChatroomRepository) GetChatroomListByUserID(userID int) []ch_dto.Chatro
 		})
 	})
 
-	if err != nil {
-		log.Printf("Failed to get chatroom list by user id: %v", err)
-		panic(err)
+	if dbError != nil {
+		return nil, &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에서 유저를 찾는 중 문제가 발생했습니다."}
 	}
 
-	return chatroomListDto
+	sort.Slice(chatroomListDto, func(i, j int) bool {
+		if chatroomListDto[i].LastMessage == nil && chatroomListDto[j].LastMessage == nil {
+			return chatroomListDto[i].ID > chatroomListDto[j].ID
+		}
+		if chatroomListDto[i].LastMessage == nil {
+			return false // 마지막 메시지가 없는 경우를 뒤로
+		}
+		if chatroomListDto[j].LastMessage == nil {
+			return true // 마지막 메시지가 없는 경우를 뒤로
+		}
+
+		// 먼저 마지막 메시지의 시간으로 내림차순 정렬
+		if chatroomListDto[i].LastMessage.Time.Equal(chatroomListDto[j].LastMessage.Time) {
+			// 마지막 메시지 시간이 같다면 ID로 내림차순 정렬
+			return chatroomListDto[i].ID > chatroomListDto[j].ID
+		}
+		return chatroomListDto[i].LastMessage.Time.After(chatroomListDto[j].LastMessage.Time)
+	})
+
+	return chatroomListDto, nil
 }
 
 func (r *ChatroomRepository) GetMineChatroom(userID int) (*ch_domain.Chatroom, *apperror.CustomError) {
@@ -254,21 +277,21 @@ func (r *ChatroomRepository) containsParticipant(participants []ch_domain.Chatro
 	return false
 }
 
-// TODO 수정필요
-func (r *ChatroomRepository) getLastMessage(roomID int) *ch_domain.ChatroomMessage {
+func (r *ChatroomRepository) getLastMessage(roomID int) (*ch_domain.ChatroomMessage, *apperror.CustomError) {
 	var lastMessage *ch_domain.ChatroomMessage
 
-	err := r.db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(r.chatroomMessage))
-		if b == nil {
-			return fmt.Errorf("bucket not found: %s", r.chatroomMessage)
+	dbError := r.db.View(func(tx *bbolt.Tx) error {
+		b, bucketError := util.GetBucket(tx, r.chatroomMessage)
+		if bucketError != nil {
+			return bucketError
 		}
 
 		return b.ForEach(func(k, v []byte) error {
 			var msg ch_domain.ChatroomMessage
-			if err := json.Unmarshal(v, &msg); err != nil {
-				return err
+			if jsonError := json.Unmarshal(v, &msg); jsonError != nil {
+				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror.FailJsonUnmarshal)
 			}
+
 			if msg.RoomID == roomID {
 				lastMessage = &msg
 			}
@@ -276,10 +299,10 @@ func (r *ChatroomRepository) getLastMessage(roomID int) *ch_domain.ChatroomMessa
 		})
 	})
 
-	if err != nil {
-		log.Printf("Failed to get last message: %v", err)
-		panic(err)
+	if dbError != nil {
+		log.Printf("failed to add chatroom message: %v", dbError)
+		return nil, &apperror.CustomError{Code: apperror.DataBaseProblem, Message: "데이터베이스에 문제가 발생했습니다."}
 	}
 
-	return lastMessage
+	return lastMessage, nil
 }
