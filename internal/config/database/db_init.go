@@ -40,6 +40,11 @@ func (i *Initializer) initializeSchema() {
 			return fmt.Errorf("delete chatroomMessage bucket: %s", err)
 		}
 
+		_, err = tx.CreateBucketIfNotExists([]byte("chatroomHistory"))
+		if err != nil {
+			return fmt.Errorf("create chatroomMessageHistory bucket: %s", err)
+		}
+
 		_, err = tx.CreateBucketIfNotExists([]byte("chatroom"))
 		if err != nil {
 			return fmt.Errorf("create chatroom bucket: %s", err)
@@ -53,6 +58,11 @@ func (i *Initializer) initializeSchema() {
 		_, err = tx.CreateBucketIfNotExists([]byte("chatroomMessage"))
 		if err != nil {
 			return fmt.Errorf("create chatroomMessage bucket: %s", err)
+		}
+
+		_, err = tx.CreateBucketIfNotExists([]byte("chatroomHistory"))
+		if err != nil {
+			return fmt.Errorf("create chatroomMessageHistory bucket: %s", err)
 		}
 
 		return nil

@@ -10,6 +10,7 @@ type ChatroomWithLastMessageDTO struct {
 	Type         ch_domain.RoomType       `json:"type"`
 	Participants []ChatroomParticipantDTO `json:"participants"`
 	LastMessage  *LastMessageDTO          `json:"lastMessage,omitempty"`
+	UnReadCount  int                      `json:"unReadCount"`
 }
 
 type LastMessageDTO struct {
@@ -20,11 +21,12 @@ type LastMessageDTO struct {
 	Time        time.Time              `json:"time"`
 }
 
-func NewChatroomWithLastMessageDTO(chatroom *ch_domain.Chatroom, message *ch_domain.ChatroomMessage) *ChatroomWithLastMessageDTO {
+func NewChatroomWithLastMessageDTO(chatroom *ch_domain.Chatroom, message *ch_domain.ChatroomMessage, unReadCount int) *ChatroomWithLastMessageDTO {
 	dto := &ChatroomWithLastMessageDTO{
 		ID:           chatroom.ID,
 		Type:         chatroom.Type,
 		Participants: make([]ChatroomParticipantDTO, 0),
+		UnReadCount:  unReadCount,
 	}
 
 	for _, participant := range chatroom.Participants {

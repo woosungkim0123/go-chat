@@ -18,10 +18,11 @@ type ChatroomRepository struct {
 	db              *bbolt.DB
 	chatroom        string
 	chatroomMessage string
+	chatroomHistory string
 }
 
 func NewChatroomRepository(db *bbolt.DB) *ChatroomRepository {
-	return &ChatroomRepository{db: db, chatroom: "chatroom", chatroomMessage: "chatroomMessage"}
+	return &ChatroomRepository{db: db, chatroom: "chatroom", chatroomMessage: "chatroomMessage", chatroomHistory: "chatroomHistory"}
 }
 
 func (r *ChatroomRepository) GetChatroomListByUserID(userID int) ([]ch_dto.ChatroomWithLastMessageDTO, *apperror.CustomError) {
@@ -40,12 +41,29 @@ func (r *ChatroomRepository) GetChatroomListByUserID(userID int) ([]ch_dto.Chatr
 			}
 
 			if room.Type != ch_domain.Open && r.containsParticipant(room.Participants, userID) {
-				lastMsg, err := r.getLastMessage(room.ID)
+				messages, err := r.GetChatroomMessages(room.ID)
 				if err != nil {
-					log.Printf("Failed to get last message: %v", err)
+					log.Printf("Failed to get messages: %v", err)
+					return nil
 				}
 
-				chatroomDto := ch_dto.NewChatroomWithLastMessageDTO(&room, lastMsg)
+				unReadCount := 0
+				history := r.getChatroomHistory(room.ID, userID) // 1, 1 시간
+
+				for _, msg := range messages {
+					if history == nil || history.Time.After(msg.Time) {
+						if msg.Participant.ID != userID {
+							unReadCount++
+						}
+					}
+				}
+
+				var lastMessage *ch_domain.ChatroomMessage
+				if messages != nil && len(messages) > 0 {
+					lastMessage = &messages[len(messages)-1]
+				}
+
+				chatroomDto := ch_dto.NewChatroomWithLastMessageDTO(&room, lastMessage, unReadCount)
 				chatroomListDto = append(chatroomListDto, *chatroomDto)
 			}
 
@@ -289,7 +307,7 @@ func (r *ChatroomRepository) getLastMessage(roomID int) (*ch_domain.ChatroomMess
 		return b.ForEach(func(k, v []byte) error {
 			var msg ch_domain.ChatroomMessage
 			if jsonError := json.Unmarshal(v, &msg); jsonError != nil {
-				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom data: %v", jsonError), apperror.FailJsonUnmarshal)
+				return util.HandleError(fmt.Sprintf("failed to unmarshal chatroom message data: %v", jsonError), apperror.FailJsonUnmarshal)
 			}
 
 			if msg.RoomID == roomID {
@@ -305,4 +323,40 @@ func (r *ChatroomRepository) getLastMessage(roomID int) (*ch_domain.ChatroomMess
 	}
 
 	return lastMessage, nil
+}
+
+func (r *ChatroomRepository) getChatroomHistory(roomID, userID int) *ch_domain.ChatroomHistory {
+	var chatroomHistory *ch_domain.ChatroomHistory
+
+	dbError := r.db.View(func(tx *bbolt.Tx) error {
+		b, bucketError := util.GetBucket(tx, r.chatroomHistory)
+		if bucketError != nil {
+			return bucketError
+		}
+
+		var FoundHistoryAndStopIterator = errors.New("found history")
+		foundHistoryResult := b.ForEach(func(k, v []byte) error {
+			var history ch_domain.ChatroomHistory
+			if jsonError := json.Unmarshal(v, &history); jsonError != nil {
+				return util.HandleError(fmt.Sprintf("failed to unmarshal history data: %v", jsonError), apperror.FailJsonUnmarshal)
+			}
+
+			if history.RoomID == roomID && history.UserID == userID {
+				chatroomHistory = &history
+				return FoundHistoryAndStopIterator
+			}
+			return nil
+		})
+
+		if errors.Is(foundHistoryResult, FoundHistoryAndStopIterator) || foundHistoryResult == nil {
+			return nil
+		}
+
+		return foundHistoryResult
+	})
+	if dbError != nil {
+		log.Printf("failed to check message read: %v", dbError)
+	}
+
+	return chatroomHistory
 }

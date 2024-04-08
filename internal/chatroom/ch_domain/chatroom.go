@@ -35,3 +35,10 @@ func NewChatroom(roomType RoomType, users []domain.User) *Chatroom {
 
 	return &Chatroom{Type: roomType, Participants: participants}
 }
+
+type ChatroomHistory struct {
+	ID     int       `json:"ID"`
+	RoomID int       `json:"roomID"`
+	UserID int       `json:"userID"`
+	Time   time.Time `json:"time"`
+}
