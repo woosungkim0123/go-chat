@@ -20,6 +20,17 @@ func RenderWithHeader(w http.ResponseWriter, location string, data interface{}) 
 	}
 }
 
+func RenderChat(w http.ResponseWriter, location string, data interface{}) {
+	headerLocation := "header"
+	chatParticipant := "chat_participant"
+	tmpl := template.Must(template.ParseFiles(makePath(location, "basic"), makePath(headerLocation, "template"), makePath(chatParticipant, "template")))
+
+	err := tmpl.Execute(w, data)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func Render(w http.ResponseWriter, location string, data interface{}) {
 	tmpl := template.Must(template.ParseFiles(makePath(location, "basic")))
 	err := tmpl.Execute(w, data)

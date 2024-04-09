@@ -47,21 +47,7 @@
         </div>
 
         <!-- 참여자 목록 -->
-        <div class="col-md-4">
-            <h3 class="mb-3">참여자</h3>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{.AccessUser.Name}} (본인)
-                    <span class="badge bg-primary rounded-pill">*</span>
-                </li>
-
-                {{range .Participants}}
-                {{if ne .ID $.AccessUser.ID}}
-                <li class="list-group-item">{{.Name}}</li>
-                {{end}}
-                {{end}}
-            </ul>
-        </div>
+        {{ template "chat_participant" . }}
     </div>
 </div>
 </body>

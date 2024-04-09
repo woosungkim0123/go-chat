@@ -40,18 +40,7 @@
         </div>
 
         <!-- 참여자 목록 -->
-        <div class="col-md-4">
-            <h3 class="mb-3">참여자</h3>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <img src="{{.AccessUser.ProfileImage}}" class="rounded-circle profile-image" />
-                        {{.AccessUser.Name}} (본인)
-                    </div>
-                    <span class="badge bg-primary rounded-pill">*</span>
-                </li>
-            </ul>
-        </div>
+        {{ template "chat_participant" . }}
     </div>
 </div>
 </body>

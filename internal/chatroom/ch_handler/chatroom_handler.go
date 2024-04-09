@@ -33,7 +33,7 @@ func (h *ChatroomHandler) GetMineChatroom(w http.ResponseWriter, r *http.Request
 		log.Printf("failed to get single chatroom: %v", err)
 	}
 
-	template.RenderWithHeader(w, "chatroom_mine", ch_dto.NewChatroomPageDTO(chatroomDTO, accessUser))
+	template.RenderChat(w, "chatroom_mine", ch_dto.NewChatroomPageDTO(chatroomDTO, accessUser))
 }
 
 // AddMineChatroomMessage 자신만의 채팅방에 메세지를 추가한다.
@@ -70,7 +70,7 @@ func (h *ChatroomHandler) GetSingleChatroom(w http.ResponseWriter, r *http.Reque
 		log.Printf("failed to get single chatroom: %v", err)
 	}
 
-	template.RenderWithHeader(w, "chatroom", ch_dto.NewChatroomPageDTO(chatroomDTO, accessUser))
+	template.RenderChat(w, "chatroom", ch_dto.NewChatroomPageDTO(chatroomDTO, accessUser))
 }
 
 func (h *ChatroomHandler) GetChatroomList(w http.ResponseWriter, r *http.Request) {
